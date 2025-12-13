@@ -24,6 +24,12 @@ Device will act as a HomeKit bridge and all of the detected PricelessToolkit LoR
 - **🔧 Dynamic Devices** — Sensors are automatically discovered and added
 - **⚠️ Critical Alerts** — Map sensors to Leak/Smoke/CO for urgent HomeKit notifications
 
+## ✨ Planned Features
+
+- ** MQTT Support
+- ** Option to turn off the LCD/LEDs
+- ** Support for OTA updates
+
 ### Supported Sensor Types
 
 | Sensor | HomeKit Service | JSON Key |
