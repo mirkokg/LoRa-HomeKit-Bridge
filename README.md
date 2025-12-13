@@ -215,6 +215,8 @@ Access the configuration web UI at `http://<bridge-ip>:8080`
 - Configure gateway key and encryption
 - Factory reset option
 
+![screenshot](screenshot.png)
+
 ---
 
 ## 📡 LoRa Sensor Protocol
