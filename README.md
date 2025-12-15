@@ -1,4 +1,4 @@
-# LoRa HomeKit Bridge
+# LoRa HomeKit Bridge Firmware
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-ESP32-blue" alt="Platform ESP32">
@@ -26,9 +26,11 @@ Device will act as a HomeKit bridge and all of the detected PricelessToolkit LoR
 
 ## ✨ Planned Features
 
-- ** MQTT Support
-- ** Option to turn off the LCD/LEDs
-- ** Support for OTA updates
+- Improved multi-page WebUI
+- Option to turn off the Screen/LEDs
+- MQTT Support
+- Support for OTA updates
+- Support for other boards
 
 ### Supported Sensor Types
 
