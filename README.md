@@ -1,4 +1,4 @@
-# LoRa HomeKit Bridge
+# LoRa HomeKit Bridge Firmware
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-ESP32-blue" alt="Platform ESP32">
