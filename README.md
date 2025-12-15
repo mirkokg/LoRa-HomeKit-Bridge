@@ -26,8 +26,7 @@ Device will act as a HomeKit bridge and all of the detected PricelessToolkit LoR
 
 ## ✨ Planned Features
 
-- Improved multi-page WebUI
-- Option to turn off the Screen/LEDs
+- Add unique links for Settings pages
 - MQTT Support
 - Support for OTA updates
 - Support for other boards
