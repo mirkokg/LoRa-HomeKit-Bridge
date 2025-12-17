@@ -1076,6 +1076,9 @@ void handleRoot() {
          } else {
              activity_led_enabled = webServer.arg("act_led") == "1";
          }
+         if (!activity_led_enabled) {
+             digitalWrite(LED_PIN, HIGH);  // Turn off LED immediately
+         }
          saveSettings();
      }
      
