@@ -168,13 +168,9 @@ void loop() {
     }
 
     // Enforce LED off state when LEDs are disabled
-    // This overrides HomeSpan's status LED control
-    static unsigned long lastLedCheck = 0;
-    if (millis() - lastLedCheck > 100) {
-        if (!power_led_enabled || !activity_led_enabled) {
-            digitalWrite(LED_PIN, LOW);  // Keep LED off
-        }
-        lastLedCheck = millis();
+    // This overrides HomeSpan's status LED control (runs every loop to override HomeSpan)
+    if (!power_led_enabled || !activity_led_enabled) {
+        digitalWrite(LED_PIN, LOW);  // Keep LED off
     }
 
     // Small delay to prevent watchdog issues
