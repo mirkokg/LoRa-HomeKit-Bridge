@@ -13,18 +13,31 @@
 // ============== Mode Flags ==============
 bool homekit_started = false;
 
+// External variables
+extern bool power_led_enabled;
+
 // ============== HomeKit Setup ==============
 void setupHomeKit() {
     displayProgress("HomeKit", "Initializing...", 0);
 
     Serial.println("[HOMEKIT] Configuring...");
     homeSpan.setLogLevel(1);
-    homeSpan.setStatusPin(LED_PIN);
+
+    // Only enable status LED if power LED is enabled
+    if (power_led_enabled) {
+        homeSpan.setStatusPin(LED_PIN);
+    }
+
     homeSpan.setControlPin(BUTTON_PIN);
     homeSpan.setPairingCode(homekit_code);  // Use generated pairing code
     homeSpan.setQRID(HOMEKIT_SETUP_ID);
     homeSpan.enableOTA();
+
+    // Use standard HomeKit port 51827 instead of default port 80
+    homeSpan.setPort(51827);
+
     Serial.printf("[HOMEKIT] Pairing code: %s\n", homekit_code_display);
+    Serial.println("[HOMEKIT] HAP port: 51827");
 
     displayProgress("HomeKit", "Creating bridge...", 50);
 

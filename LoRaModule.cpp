@@ -62,9 +62,11 @@ void processLoRaPacket() {
     int packetSize = LoRa.parsePacket();
     if (packetSize == 0) return;
 
-    // Blink LED if enabled
+    // Blink LED if enabled, keep off if disabled
     if (activity_led_enabled) {
         digitalWrite(LED_PIN, LOW);
+    } else {
+        digitalWrite(LED_PIN, HIGH);
     }
 
     // Wake OLED on activity
@@ -143,7 +145,6 @@ void processLoRaPacket() {
         Serial.println();
     }
 
-    if (activity_led_enabled) {
-        digitalWrite(LED_PIN, HIGH);
-    }
+    // Turn LED off (HIGH) after activity
+    digitalWrite(LED_PIN, HIGH);
 }
