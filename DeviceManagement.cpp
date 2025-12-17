@@ -316,6 +316,8 @@ void updateDevice(Device* dev, JsonDocument& doc, int rssi) {
 
     last_event = eventStr;
 
-    // Log activity for web UI
-    logActivity(dev->name, eventStr.c_str());
+    // Log activity for web UI - serialize JSON document to string
+    String jsonStr;
+    serializeJson(doc, jsonStr);
+    logActivity(dev->name, jsonStr.c_str());
 }
