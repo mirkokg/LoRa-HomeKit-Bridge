@@ -28,8 +28,8 @@ extern uint16_t lora_preamble;
 extern uint8_t lora_syncword;
 
 // Hardware settings (defined in Display.h but used here)
-extern bool power_led_enabled;
-extern bool activity_led_enabled;
+extern volatile bool power_led_enabled;
+extern volatile bool activity_led_enabled;
 
 // HomeKit pairing code
 extern char homekit_code[9];

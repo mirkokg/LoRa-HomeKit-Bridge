@@ -169,8 +169,16 @@ void loop() {
 
     // Enforce LED off state when LEDs are disabled
     // This overrides HomeSpan's status LED control (runs every loop to override HomeSpan)
+    static unsigned long lastDebug = 0;
     if (!power_led_enabled || !activity_led_enabled) {
         digitalWrite(LED_PIN, LOW);  // Keep LED off
+
+        // Debug output every 5 seconds
+        if (millis() - lastDebug > 5000) {
+            Serial.printf("[LOOP] LED enforcement active: power=%d, activity=%d\n",
+                          power_led_enabled, activity_led_enabled);
+            lastDebug = millis();
+        }
     }
 
     // Small delay to prevent watchdog issues

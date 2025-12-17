@@ -23,8 +23,8 @@ uint8_t lora_cr = DEFAULT_LORA_CR;
 uint16_t lora_preamble = DEFAULT_LORA_PREAMBLE;
 uint8_t lora_syncword = DEFAULT_LORA_SYNCWORD;
 
-bool power_led_enabled = true;
-bool activity_led_enabled = true;
+volatile bool power_led_enabled = true;
+volatile bool activity_led_enabled = true;
 
 char homekit_code[9] = "";
 char homekit_code_display[10] = "";

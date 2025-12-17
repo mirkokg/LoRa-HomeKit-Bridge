@@ -1076,8 +1076,10 @@ void handleRoot() {
          } else {
              activity_led_enabled = webServer.arg("act_led") == "1";
          }
+         Serial.printf("[WEB] Activity LED toggled to: %d\n", activity_led_enabled);
          if (!activity_led_enabled) {
              digitalWrite(LED_PIN, LOW);  // Turn off LED immediately
+             Serial.println("[WEB] Setting LED pin LOW (off)");
          }
          saveSettings();
      }
