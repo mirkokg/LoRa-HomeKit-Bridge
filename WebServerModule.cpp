@@ -157,7 +157,42 @@ void handleRoot() {
             if (devices[i].has_temp) { html += "T:" + String(devices[i].temperature,1) + "C "; }
             if (devices[i].has_hum) { html += "H:" + String((int)devices[i].humidity) + "% "; }
             html += "RSSI:" + String(devices[i].rssi);
-            html += F("</div></div><div class=\"device-actions\"><button class=\"device-btn\" onclick=\"renameDevice('"); html += devices[i].id; html += F("','"); html += devices[i].name; html += F("')\">Rename</button><button class=\"device-btn danger\" onclick=\"removeDevice('"); html += devices[i].id; html += F("')\">Remove</button></div></div>");
+            html += F("</div>");
+
+            // Add sensor type selector for motion/contact sensors
+            if (devices[i].has_contact) {
+                html += F("<div style=\"margin-top:6px;font-size:10px\"><label style=\"color:var(--text-muted)\">Type: </label><select class=\"form-select\" style=\"display:inline-block;width:auto;padding:2px 6px;font-size:10px\" onchange=\"setSensorType('");
+                html += devices[i].id;
+                html += F("','contact',this.value)\"><option value=\"0\"");
+                if (devices[i].contact_type == CONTACT_TYPE_CONTACT) html += " selected";
+                html += F(">Contact</option><option value=\"1\"");
+                if (devices[i].contact_type == CONTACT_TYPE_LEAK) html += " selected";
+                html += F(">Leak</option><option value=\"2\"");
+                if (devices[i].contact_type == CONTACT_TYPE_SMOKE) html += " selected";
+                html += F(">Smoke</option><option value=\"3\"");
+                if (devices[i].contact_type == CONTACT_TYPE_CO) html += " selected";
+                html += F(">CO</option><option value=\"4\"");
+                if (devices[i].contact_type == CONTACT_TYPE_OCCUPANCY) html += " selected";
+                html += F(">Occupancy</option></select></div>");
+            }
+
+            if (devices[i].has_motion) {
+                html += F("<div style=\"margin-top:6px;font-size:10px\"><label style=\"color:var(--text-muted)\">Type: </label><select class=\"form-select\" style=\"display:inline-block;width:auto;padding:2px 6px;font-size:10px\" onchange=\"setSensorType('");
+                html += devices[i].id;
+                html += F("','motion',this.value)\"><option value=\"0\"");
+                if (devices[i].motion_type == MOTION_TYPE_MOTION) html += " selected";
+                html += F(">Motion</option><option value=\"1\"");
+                if (devices[i].motion_type == MOTION_TYPE_OCCUPANCY) html += " selected";
+                html += F(">Occupancy</option><option value=\"2\"");
+                if (devices[i].motion_type == MOTION_TYPE_LEAK) html += " selected";
+                html += F(">Leak</option><option value=\"3\"");
+                if (devices[i].motion_type == MOTION_TYPE_SMOKE) html += " selected";
+                html += F(">Smoke</option><option value=\"4\"");
+                if (devices[i].motion_type == MOTION_TYPE_CO) html += " selected";
+                html += F(">CO</option></select></div>");
+            }
+
+            html += F("</div><div class=\"device-actions\"><button class=\"device-btn\" onclick=\"renameDevice('"); html += devices[i].id; html += F("','"); html += devices[i].name; html += F("')\">Rename</button><button class=\"device-btn danger\" onclick=\"removeDevice('"); html += devices[i].id; html += F("')\">Remove</button></div></div>");
         }
     }
     html += F("</div></div>");
@@ -259,6 +294,7 @@ void handleRoot() {
     html += F("function addTest(t){var s=document.getElementById('test-status');if(s)s.innerHTML='Adding...';fetch('/api/test?type='+t).then(r=>r.json()).then(d=>{if(s)s.innerHTML=d.message;setTimeout(()=>{navigateTo('devices');setTimeout(()=>location.reload(),100);},2000);});}");
     html += F("function renameDevice(id,name){var n=prompt('New name:',name);if(n&&n!==name){fetch('/api/rename?id='+encodeURIComponent(id)+'&name='+encodeURIComponent(n)).then(r=>r.json()).then(d=>{alert(d.message);location.reload();});}}");
     html += F("function removeDevice(id){if(confirm('Remove '+id+'?')){fetch('/api/remove?id='+encodeURIComponent(id)).then(r=>r.json()).then(d=>{alert(d.message);location.reload();});}}");
+    html += F("function setSensorType(id,sensor,type){fetch('/api/settype?id='+encodeURIComponent(id)+'&sensor='+sensor+'&type='+type).then(r=>r.json()).then(d=>{alert(d.message);if(d.success){setTimeout(()=>location.reload(),1000);}});}");
     html += F("function unpairHomeKit(){if(confirm('Unpair?')){fetch('/api/unpair').then(()=>{alert('Unpairing...');setTimeout(()=>location.reload(),3000);});}}");
     html += F("function restartDevice(){if(confirm('Restart?')){fetch('/api/restart').then(()=>{alert('Restarting...');setTimeout(()=>location.reload(),5000);});}}");
     html += F("function factoryReset(){if(confirm('Reset ALL settings?')){fetch('/reset',{method:'POST'}).then(()=>{alert('Resetting...');});}}");
