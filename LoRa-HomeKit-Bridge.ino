@@ -167,11 +167,11 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
-    // Enforce LED off state when power LED is disabled
+    // Enforce LED off state when LEDs are disabled
     // This overrides HomeSpan's status LED control
     static unsigned long lastLedCheck = 0;
     if (millis() - lastLedCheck > 100) {
-        if (!power_led_enabled) {
+        if (!power_led_enabled || !activity_led_enabled) {
             digitalWrite(LED_PIN, HIGH);  // Keep LED off
         }
         lastLedCheck = millis();
