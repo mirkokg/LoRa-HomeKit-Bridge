@@ -55,8 +55,11 @@ bool authenticateRequest() {
         return true;  // Auth disabled, allow all
     }
 
+    Serial.println("[AUTH] Checking authentication...");
+
     String authHeader = webServer.header("Authorization");
     if (authHeader.length() == 0 || !authHeader.startsWith("Basic ")) {
+        Serial.println("[AUTH] No valid Authorization header");
         return false;
     }
 
@@ -70,6 +73,7 @@ bool authenticateRequest() {
                                      authHeader.length());
 
     if (ret != 0 || decodedLen == 0) {
+        Serial.printf("[AUTH] Base64 decode failed: ret=%d, len=%d\n", ret, decodedLen);
         return false;  // Base64 decode failed
     }
 
@@ -78,14 +82,25 @@ bool authenticateRequest() {
     // Parse username:password
     String credentials = String((char*)decoded);
     int colonIndex = credentials.indexOf(':');
-    if (colonIndex <= 0) return false;
+    if (colonIndex <= 0) {
+        Serial.println("[AUTH] Invalid credentials format");
+        return false;
+    }
 
     String username = credentials.substring(0, colonIndex);
     String password = credentials.substring(colonIndex + 1);
 
+    Serial.printf("[AUTH] Username: %s (expected: %s)\n", username.c_str(), auth_username);
+
     // Verify credentials
-    if (strcmp(username.c_str(), auth_username) != 0) return false;
-    return verifyPassword(password.c_str(), auth_password_hash);
+    if (strcmp(username.c_str(), auth_username) != 0) {
+        Serial.println("[AUTH] Username mismatch");
+        return false;
+    }
+
+    bool passValid = verifyPassword(password.c_str(), auth_password_hash);
+    Serial.printf("[AUTH] Password valid: %s\n", passValid ? "YES" : "NO");
+    return passValid;
 }
 
 void requireAuth() {
@@ -1193,11 +1208,14 @@ void handleRoot() {
                          doc["success"] = false;
                          doc["message"] = "Username required, password min 8 chars";
                      } else {
+                         Serial.printf("[AUTH] Enabling authentication - User: %s, Pass length: %d\n",
+                                      username.c_str(), password.length());
                          auth_enabled = true;
                          strncpy(auth_username, username.c_str(), AUTH_USERNAME_MAX_LEN - 1);
                          auth_username[AUTH_USERNAME_MAX_LEN - 1] = '\0';
                          hashPassword(password.c_str(), auth_password_hash);
                          saveSettings();
+                         Serial.printf("[AUTH] Auth enabled and saved. Username: %s\n", auth_username);
                          doc["success"] = true;
                          doc["message"] = "Authentication enabled";
                      }
