@@ -170,9 +170,20 @@ void loop() {
     // Enforce LED off state when LEDs are disabled
     // This overrides HomeSpan's status LED control
     static unsigned long lastLedCheck = 0;
+    static int debugCounter = 0;
     if (millis() - lastLedCheck > 100) {
         if (!power_led_enabled || !activity_led_enabled) {
+            // Force pin mode and state
+            pinMode(LED_PIN, OUTPUT);
             digitalWrite(LED_PIN, HIGH);  // Keep LED off
+
+            // Debug: read back the pin state and print occasionally
+            if (debugCounter < 5) {
+                int pinState = digitalRead(LED_PIN);
+                Serial.printf("[DEBUG] LED enforcement: power_led=%d, activity_led=%d, wrote HIGH, read back: %d\n",
+                              power_led_enabled, activity_led_enabled, pinState);
+                debugCounter++;
+            }
         }
         lastLedCheck = millis();
     }
