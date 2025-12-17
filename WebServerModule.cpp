@@ -1064,9 +1064,7 @@ void handleRoot() {
          } else {
              power_led_enabled = webServer.arg("pwr_led") == "1";
          }
-         if (!power_led_enabled) {
-             digitalWrite(LED_PIN, LOW);  // Turn off LED
-         }
+         Serial.printf("[WEB] Power LED toggled to: %d\n", power_led_enabled);
          saveSettings();
      }
      

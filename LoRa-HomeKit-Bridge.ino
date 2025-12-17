@@ -67,7 +67,7 @@ void setup() {
     displayProgress("Settings", "Loaded!", 100);
 
     // Apply hardware settings
-    if (!power_led_enabled) {
+    if (!activity_led_enabled) {
         digitalWrite(LED_PIN, LOW);  // Turn off LED
     }
     if (display_available) {
@@ -167,10 +167,10 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
-    // Enforce LED off state when LEDs are disabled
-    // This overrides HomeSpan's status LED control (runs every loop to override HomeSpan)
+    // Enforce LED off state when activity LED is disabled
+    // Only enforce when activity LED is off - power LED just controls HomeSpan status
     static unsigned long lastDebug = 0;
-    if (!power_led_enabled || !activity_led_enabled) {
+    if (!activity_led_enabled) {
         digitalWrite(LED_PIN, LOW);  // Keep LED off
 
         // Debug output every 5 seconds
