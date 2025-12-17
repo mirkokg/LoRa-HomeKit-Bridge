@@ -260,10 +260,20 @@ void handleRoot() {
             html += F("</div><div class=\"device-actions\"><button class=\"device-btn\" onclick=\"renameDevice('"); html += devices[i].id; html += F("','"); html += devices[i].name; html += F("')\">Rename</button><button class=\"device-btn danger\" onclick=\"removeDevice('"); html += devices[i].id; html += F("')\">Remove</button></div></div>");
         }
     }
-    html += F("</div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>Device Activity</h3><button class=\"btn btn-secondary\" onclick=\"clearAllActivity()\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2\"></path></svg>Clear All</button></div>");
+    html += F("</div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>Device Activity</h3><button class=\"btn btn-secondary\" onclick=\"clearAllActivity()\">Clear All</button></div>");
+
+    // Count valid (non-deleted) entries
+    int validCount = 0;
+    for (int i = 0; i < activityLogCount; i++) {
+        int idx = (activityLogIndex - 1 - i + MAX_ACTIVITY_LOG) % MAX_ACTIVITY_LOG;
+        if (idx < 0) idx += MAX_ACTIVITY_LOG;
+        if (activityLog[idx].device_name[0] != 0) {
+            validCount++;
+        }
+    }
 
     // Display activity log entries (reverse chronological order)
-    if (activityLogCount == 0) {
+    if (validCount == 0) {
         html += F("<p style=\"color: var(--text-muted); font-size: 14px;\">No recent activity. Waiting for device messages...</p>");
     } else {
         // Show entries in reverse order (newest first)
