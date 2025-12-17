@@ -7,7 +7,7 @@
 #include <WiFi.h>
 #include <HomeSpan.h>
 #include <ArduinoJson.h>
-#include <base64.h>
+#include <mbedtls/base64.h>
 #include "core/Config.h"
 #include "core/Device.h"
 #include "homekit/DeviceManagement.h"
@@ -62,12 +62,21 @@ bool authenticateRequest() {
 
     // Decode Base64 credentials
     authHeader = authHeader.substring(6);
-    char decoded[128];
-    int decodedLen = base64_decode(decoded, authHeader.c_str(), authHeader.length());
+    unsigned char decoded[128];
+    size_t decodedLen = 0;
+
+    int ret = mbedtls_base64_decode(decoded, sizeof(decoded), &decodedLen,
+                                     (const unsigned char*)authHeader.c_str(),
+                                     authHeader.length());
+
+    if (ret != 0 || decodedLen == 0) {
+        return false;  // Base64 decode failed
+    }
+
     decoded[decodedLen] = '\0';
 
     // Parse username:password
-    String credentials = String(decoded);
+    String credentials = String((char*)decoded);
     int colonIndex = credentials.indexOf(':');
     if (colonIndex <= 0) return false;
 
