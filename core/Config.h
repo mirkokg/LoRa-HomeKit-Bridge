@@ -59,6 +59,10 @@ enum EncryptionMode : uint8_t {
 // HomeKit pairing settings
 #define HOMEKIT_SETUP_ID        "LRHK"          // 4 character setup ID
 
+// HTTP Authentication defaults
+#define AUTH_USERNAME_MAX_LEN   32
+#define AUTH_PASSWORD_HASH_LEN  32  // SHA-256 = 32 bytes
+
 // ============== Sensor Type Definitions ==============
 enum ContactType : uint8_t {
     CONTACT_TYPE_CONTACT = 0,    // Default contact sensor

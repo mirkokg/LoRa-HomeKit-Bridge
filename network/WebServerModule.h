@@ -15,6 +15,10 @@ extern WebServer webServer;
 // ============== Activity Logging ==============
 void logActivity(const char* deviceName, const char* message);
 
+// ============== Authentication ==============
+bool authenticateRequest();
+void requireAuth();
+
 // ============== Web Server Functions ==============
 void setupWebServer();
 void handleRoot();
@@ -28,6 +32,9 @@ void handleRemoveDevice();
 void handleRestart();
 void handleSetSensorType();
 void handleHardwareSettings();
+void handleClearActivity();
+void handleRemoveActivity();
+void handleAuthSettings();
 void handleNotFound();
 
 #endif // WEBSERVER_MODULE_H

@@ -37,12 +37,21 @@ extern char homekit_code[9];
 // Mode flags
 extern bool wifi_configured;
 
+// HTTP Authentication settings
+extern bool auth_enabled;
+extern char auth_username[AUTH_USERNAME_MAX_LEN];
+extern uint8_t auth_password_hash[AUTH_PASSWORD_HASH_LEN];
+
 // ============== Settings Functions ==============
 void toBase36(uint64_t num, char* out, int len);
 void generatePairingCode();
 void loadSettings();
 void saveSettings();
 void clearSettings();
+
+// HTTP Authentication functions
+void hashPassword(const char* password, uint8_t* hash);
+bool verifyPassword(const char* password, const uint8_t* hash);
 
 // Device persistence
 void saveDevices();

@@ -7,6 +7,7 @@
 #include <WiFi.h>
 #include <HomeSpan.h>
 #include <ArduinoJson.h>
+#include <base64.h>
 #include "core/Config.h"
 #include "core/Device.h"
 #include "homekit/DeviceManagement.h"
@@ -46,6 +47,40 @@ void logActivity(const char* deviceName, const char* message) {
     if (activityLogCount < MAX_ACTIVITY_LOG) {
         activityLogCount++;
     }
+}
+
+// ============== Authentication Middleware ==============
+bool authenticateRequest() {
+    if (!auth_enabled || strlen(auth_username) == 0) {
+        return true;  // Auth disabled, allow all
+    }
+
+    String authHeader = webServer.header("Authorization");
+    if (authHeader.length() == 0 || !authHeader.startsWith("Basic ")) {
+        return false;
+    }
+
+    // Decode Base64 credentials
+    authHeader = authHeader.substring(6);
+    char decoded[128];
+    int decodedLen = base64_decode(decoded, authHeader.c_str(), authHeader.length());
+    decoded[decodedLen] = '\0';
+
+    // Parse username:password
+    String credentials = String(decoded);
+    int colonIndex = credentials.indexOf(':');
+    if (colonIndex <= 0) return false;
+
+    String username = credentials.substring(0, colonIndex);
+    String password = credentials.substring(colonIndex + 1);
+
+    // Verify credentials
+    if (strcmp(username.c_str(), auth_username) != 0) return false;
+    return verifyPassword(password.c_str(), auth_password_hash);
+}
+
+void requireAuth() {
+    webServer.requestAuthentication(BASIC_AUTH, "LoRa Bridge", "Authentication required");
 }
 
 // ============== Global Objects ==============
@@ -90,9 +125,14 @@ const char CSS_STYLES[] PROGMEM = R"rawliteral(
 )rawliteral";
 
 void handleRoot() {
+    if (!authenticateRequest()) {
+        requireAuth();
+        return;
+    }
+
     String html;
     html.reserve(32000);
-    
+
     bool isPaired = homekit_started && (homeSpan.controllerListBegin() != homeSpan.controllerListEnd());
     int activeDevices = getActiveDeviceCount();
     unsigned long uptime = (millis() - boot_time) / 1000;
@@ -386,6 +426,38 @@ void handleRoot() {
     
     // Actions Page
     html += F("<div class=\"page\" id=\"page-actions\"><div class=\"page-header\"><h1 class=\"page-title\">System</h1><p class=\"page-desc\">Device management</p></div>");
+
+    // Authentication Card
+    html += F("<div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">");
+    html += F("<svg fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\">");
+    html += F("<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"/>");
+    html += F("<path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg>Authentication</h3></div>");
+    html += F("<div class=\"toggle-group\"><div class=\"toggle-info\">");
+    html += F("<span class=\"toggle-title\">Enable Authentication</span>");
+    html += F("<span class=\"toggle-desc\">Protect web interface with username/password</span>");
+    html += F("</div><div class=\"toggle-btn");
+    if (auth_enabled) html += F(" active");
+    html += F("\" id=\"authEnabled\" onclick=\"toggleAuth()\"></div></div>");
+    if (!auth_enabled) {
+        html += F("<div class=\"form-hint\" style=\"margin-top:12px;color:#f59e0b\">");
+        html += F("⚠️ Warning: Interface is unprotected!</div>");
+    }
+    html += F("<div id=\"authForm\" style=\"");
+    if (!auth_enabled) html += F("display:none;");
+    html += F("margin-top:14px\">");
+    html += F("<div class=\"form-group\"><label class=\"form-label\">Username</label>");
+    html += F("<input type=\"text\" id=\"authUsername\" class=\"form-input\" value=\"");
+    html += String(auth_username);
+    html += F("\" placeholder=\"admin\"></div>");
+    html += F("<div class=\"form-group\"><label class=\"form-label\">Password</label>");
+    html += F("<input type=\"password\" id=\"authPassword\" class=\"form-input\" placeholder=\"");
+    if (auth_enabled) html += F("(unchanged)");
+    else html += F("Min 8 characters");
+    html += F("\"></div>");
+    html += F("<div class=\"form-hint\">Lost password? Factory reset required.</div>");
+    html += F("<button class=\"btn btn-primary\" onclick=\"applyAuth()\">Apply</button>");
+    html += F("</div></div>");
+
     html += F("<div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">Maintenance</h3></div>");
     html += F("<div class=\"action-card\"><div class=\"action-info\"><div class=\"action-icon warning\"><svg fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M23 4v6h-6M1 20v-6h6\"/><path d=\"M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15\"/></svg></div><div class=\"action-text\"><h4>Restart</h4><p>Reboot device</p></div></div><button class=\"btn btn-warning\" onclick=\"restartDevice()\">Restart</button></div>");
     html += F("<div class=\"action-card\"><div class=\"action-info\"><div class=\"action-icon danger\"><svg fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path d=\"M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6\"/></svg></div><div class=\"action-text\"><h4>Factory Reset</h4><p>Erase all settings</p></div></div><button class=\"btn btn-danger\" onclick=\"factoryReset()\">Reset</button></div></div>");
@@ -419,14 +491,32 @@ void handleRoot() {
     html += F("function setHwVal(k,v){fetch('/api/hardware?'+k+'='+v);}");
     html += F("function clearAllActivity(){if(confirm('Clear all activity?')){fetch('/api/activity/clear').then(r=>r.json()).then(d=>{if(d.success)location.reload();});}}");
     html += F("function removeActivity(idx){fetch('/api/activity/remove?index='+idx).then(r=>r.json()).then(d=>{if(d.success)location.reload();});}");
+    html += F("function toggleAuth(){var e=document.getElementById('authEnabled');var f=document.getElementById('authForm');");
+    html += F("var isEnabled=e.classList.contains('active');");
+    html += F("if(isEnabled){if(confirm('Disable authentication? Interface will be unprotected!')){");
+    html += F("fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},");
+    html += F("body:'auth_enabled=false'}).then(r=>r.json()).then(d=>{alert(d.message);location.reload();});}}");
+    html += F("else{e.classList.add('active');f.style.display='block';}}");
+    html += F("function applyAuth(){var u=document.getElementById('authUsername').value;");
+    html += F("var p=document.getElementById('authPassword').value;");
+    html += F("if(!u||u.length<1){alert('Username required');return;}");
+    html += F("if(!p||p.length<8){alert('Password must be at least 8 characters');return;}");
+    html += F("fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},");
+    html += F("body:'auth_enabled=true&username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p)})");
+    html += F(".then(r=>r.json()).then(d=>{alert(d.message);if(d.success)location.reload();});}");
     html += F("</script></body></html>");
     
     webServer.send(200, "text/html", html);
 }
 
  void handleSave() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      bool needsRestart = false;
-     
+
      if (webServer.hasArg("ssid") && webServer.arg("ssid").length() > 0) {
          String newSsid = webServer.arg("ssid");
          if (strcmp(wifi_ssid, newSsid.c_str()) != 0) {
@@ -549,8 +639,13 @@ void handleRoot() {
  }
  
  void handleReset() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      clearSettings();
-     
+
      String html = "<!DOCTYPE html><html><head>";
      html += "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
      html += "<style>";
@@ -577,8 +672,13 @@ void handleRoot() {
  }
  
  void handleScan() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      Serial.println("[WIFI] Scanning networks...");
-     
+
      int n = WiFi.scanNetworks();
      
      StaticJsonDocument<1024> doc;
@@ -602,6 +702,11 @@ void handleRoot() {
  
  // Test device handler - creates simulated sensors for testing
  void handleTestDevice() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      String type = webServer.arg("type");
      String response;
      StaticJsonDocument<256> responseDoc;
@@ -713,8 +818,13 @@ void handleRoot() {
  
  // Unpair HomeKit handler - removes all paired controllers
  void handleUnpair() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      Serial.println("[HOMEKIT] Unpairing all controllers...");
-     
+
      // HomeSpan's unpair command
      homeSpan.processSerialCommand("U");
      
@@ -726,9 +836,14 @@ void handleRoot() {
  
  // Rename device handler
  void handleRenameDevice() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      String id = webServer.arg("id");
      String newName = webServer.arg("name");
-     
+
      StaticJsonDocument<256> doc;
      
      if (id.length() == 0 || newName.length() == 0) {
@@ -755,8 +870,13 @@ void handleRoot() {
  
  // Remove device handler
  void handleRemoveDevice() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      String id = webServer.arg("id");
-     
+
      StaticJsonDocument<256> doc;
      
      if (id.length() == 0) {
@@ -783,6 +903,11 @@ void handleRoot() {
  
  // Restart device handler
  void handleRestart() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      webServer.send(200, "application/json", "{\"success\":true,\"message\":\"Restarting...\"}");
      delay(500);
      ESP.restart();
@@ -790,10 +915,15 @@ void handleRoot() {
  
  // Set sensor type handler
  void handleSetSensorType() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      String id = webServer.arg("id");
      String sensor = webServer.arg("sensor");
      String typeStr = webServer.arg("type");
-     
+
      StaticJsonDocument<256> doc;
      
      if (id.length() == 0 || sensor.length() == 0) {
@@ -898,6 +1028,11 @@ void handleRoot() {
  
  // Hardware settings handler
  void handleHardwareSettings() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      // Handle toggle actions
      if (webServer.hasArg("pwr_led")) {
          if (webServer.arg("pwr_led") == "toggle") {
@@ -962,6 +1097,11 @@ void handleRoot() {
  
  // Clear all activity handler
  void handleClearActivity() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      activityLogCount = 0;
      activityLogIndex = 0;
 
@@ -976,6 +1116,11 @@ void handleRoot() {
 
  // Remove single activity entry handler
  void handleRemoveActivity() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
      String indexStr = webServer.arg("index");
 
      StaticJsonDocument<128> doc;
@@ -1013,6 +1158,60 @@ void handleRoot() {
      webServer.send(200, "application/json", response);
  }
 
+ // Authentication settings handler
+ void handleAuthSettings() {
+     if (!authenticateRequest()) {
+         requireAuth();
+         return;
+     }
+
+     StaticJsonDocument<256> doc;
+
+     if (webServer.method() == HTTP_POST) {
+         if (webServer.hasArg("auth_enabled")) {
+             bool newEnabled = webServer.arg("auth_enabled") == "true";
+
+             if (newEnabled) {
+                 // Enabling auth
+                 if (!webServer.hasArg("username") || !webServer.hasArg("password")) {
+                     doc["success"] = false;
+                     doc["message"] = "Username and password required";
+                 } else {
+                     String username = webServer.arg("username");
+                     String password = webServer.arg("password");
+
+                     if (username.length() == 0 || password.length() < 8) {
+                         doc["success"] = false;
+                         doc["message"] = "Username required, password min 8 chars";
+                     } else {
+                         auth_enabled = true;
+                         strncpy(auth_username, username.c_str(), AUTH_USERNAME_MAX_LEN - 1);
+                         auth_username[AUTH_USERNAME_MAX_LEN - 1] = '\0';
+                         hashPassword(password.c_str(), auth_password_hash);
+                         saveSettings();
+                         doc["success"] = true;
+                         doc["message"] = "Authentication enabled";
+                     }
+                 }
+             } else {
+                 // Disabling auth
+                 auth_enabled = false;
+                 saveSettings();
+                 doc["success"] = true;
+                 doc["message"] = "Authentication disabled";
+             }
+         }
+     } else {
+         // GET current status
+         doc["auth_enabled"] = auth_enabled;
+         doc["auth_username"] = auth_username;
+     }
+
+     String response;
+     serializeJson(doc, response);
+     webServer.send(200, "application/json", response);
+ }
+
  // Captive portal handler - redirect all requests to root
  void handleNotFound() {
      if (ap_mode) {
@@ -1042,6 +1241,7 @@ void setupWebServer() {
     webServer.on("/api/hardware", handleHardwareSettings);
     webServer.on("/api/activity/clear", handleClearActivity);
     webServer.on("/api/activity/remove", handleRemoveActivity);
+    webServer.on("/api/auth", handleAuthSettings);
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 

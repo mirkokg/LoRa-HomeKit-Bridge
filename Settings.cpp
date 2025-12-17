@@ -6,6 +6,7 @@
 #include "hardware/Display.h"
 #include "data/Encryption.h"
 #include <esp_random.h>
+#include <mbedtls/sha256.h>
 
 // ============== Global Objects ==============
 Preferences prefs;
@@ -29,6 +30,10 @@ char homekit_code[9] = "";
 char homekit_code_display[10] = "";
 char homekit_qr_uri[25] = "";
 bool wifi_configured = false;
+
+bool auth_enabled = false;
+char auth_username[AUTH_USERNAME_MAX_LEN] = "";
+uint8_t auth_password_hash[AUTH_PASSWORD_HASH_LEN] = {0};
 
 // ============== Helper Functions ==============
 void toBase36(uint64_t num, char* out, int len) {
@@ -59,6 +64,21 @@ void generatePairingCode() {
     sprintf(homekit_qr_uri, "X-HM://%s%s", base36, HOMEKIT_SETUP_ID);
 
     Serial.printf("[HOMEKIT] Generated pairing code: %s, QR: %s\n", homekit_code_display, homekit_qr_uri);
+}
+
+void hashPassword(const char* password, uint8_t* hash) {
+    mbedtls_sha256_context ctx;
+    mbedtls_sha256_init(&ctx);
+    mbedtls_sha256_starts(&ctx, 0);  // 0 = SHA-256 (not SHA-224)
+    mbedtls_sha256_update(&ctx, (const unsigned char*)password, strlen(password));
+    mbedtls_sha256_finish(&ctx, hash);
+    mbedtls_sha256_free(&ctx);
+}
+
+bool verifyPassword(const char* password, const uint8_t* hash) {
+    uint8_t computed_hash[AUTH_PASSWORD_HASH_LEN];
+    hashPassword(password, computed_hash);
+    return memcmp(computed_hash, hash, AUTH_PASSWORD_HASH_LEN) == 0;
 }
 
 void loadSettings() {
@@ -106,6 +126,13 @@ void loadSettings() {
         sprintf(homekit_qr_uri, "X-HM://%s%s", base36, HOMEKIT_SETUP_ID);
     }
 
+    // HTTP Authentication settings
+    auth_enabled = prefs.getBool("auth_en", false);
+    if (auth_enabled) {
+        prefs.getString("auth_user", auth_username, sizeof(auth_username));
+        prefs.getBytes("auth_hash", auth_password_hash, AUTH_PASSWORD_HASH_LEN);
+    }
+
     prefs.end();
 
     // Generate pairing code on first boot
@@ -142,6 +169,18 @@ void saveSettings() {
     prefs.putBool("oled_en", oled_enabled);
     prefs.putUChar("oled_br", oled_brightness);
     prefs.putUShort("oled_to", oled_timeout);
+    // HTTP Authentication
+    prefs.putBool("auth_en", auth_enabled);
+    if (auth_enabled) {
+        prefs.putString("auth_user", auth_username);
+        prefs.putBytes("auth_hash", auth_password_hash, AUTH_PASSWORD_HASH_LEN);
+    } else {
+        // Clear credentials when disabled
+        prefs.remove("auth_user");
+        prefs.remove("auth_hash");
+        auth_username[0] = '\0';
+        memset(auth_password_hash, 0, AUTH_PASSWORD_HASH_LEN);
+    }
     // Pairing code
     prefs.putString("hk_code", homekit_code);
     prefs.end();
