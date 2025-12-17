@@ -166,7 +166,7 @@ void handleRoot() {
     for (int i = 0; i < encrypt_key_len; i++) { char hex[3]; sprintf(hex, "%02X", encrypt_key[i]); encKeyHex += hex; }
     char syncHex[5]; sprintf(syncHex, "%02X", lora_syncword);
     
-    html += F("<!DOCTYPE html><html lang=\"en\" data-theme=\"light\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>LoRa HomeKit Bridge</title><style>");
+    html += F("<!DOCTYPE html><html lang=\"en\" data-theme=\"light\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>LoRa HomeKit Bridge</title><link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\"><style>");
     html += FPSTR(CSS_STYLES);
     html += F("</style></head><body>");
     
@@ -1268,7 +1268,8 @@ void handleRoot() {
 void setupWebServer() {
     // Main page
     webServer.on("/", handleRoot);
-    webServer.on("/favicon.ico", handleFavicon);
+    webServer.on("/favicon.svg", handleFavicon);
+    webServer.on("/favicon.ico", handleFavicon);  // Handle both requests
 
     // API endpoints
     webServer.on("/save", HTTP_POST, handleSave);
