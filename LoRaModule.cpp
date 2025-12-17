@@ -16,7 +16,7 @@ extern Device* registerDevice(const char* id, JsonDocument& doc);
 extern void updateDevice(Device* dev, JsonDocument& doc, int rssi);
 
 // External variables
-extern bool activity_led_enabled;
+extern volatile bool activity_led_enabled;
 
 // ============== Statistics ==============
 uint32_t packets_received = 0;

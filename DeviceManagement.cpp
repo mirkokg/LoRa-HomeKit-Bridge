@@ -15,7 +15,7 @@
 bool homekit_started = false;
 
 // External variables
-extern bool power_led_enabled;
+extern volatile bool power_led_enabled;
 
 // ============== HomeKit Setup ==============
 void setupHomeKit() {
