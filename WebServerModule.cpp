@@ -398,7 +398,7 @@ void handleRoot() {
     
     // LoRa Page
     html += F("<div class=\"page\" id=\"page-lora\"><div class=\"page-header\"><h1 class=\"page-title\">LoRa Settings</h1><p class=\"page-desc\">Configure radio</p></div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">Radio Configuration</h3></div>");
-    html += F("<p class=\"form-hint warning\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z\"/></svg>Must match your sensors!</p>");
+    html += F("<p class=\"form-hint warning\">⚠️ Must match your sensors!</p>");
     html += F("<form id=\"loraForm\" onsubmit=\"return saveSettings(event)\"><div class=\"grid-2\"><div class=\"form-group\"><label class=\"form-label\">Frequency</label><select class=\"form-select\" name=\"freq\"><option value=\"433.0\"");
     if (lora_frequency < 500) html += " selected";
     html += F(">433 MHz</option><option value=\"868.0\"");
@@ -427,7 +427,7 @@ void handleRoot() {
     
     // Encryption Page
     html += F("<div class=\"page\" id=\"page-encryption\"><div class=\"page-header\"><h1 class=\"page-title\">Encryption</h1><p class=\"page-desc\">Configure data encryption</p></div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">Encryption</h3></div>");
-    html += F("<p class=\"form-hint warning\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z\"/></svg>Must match your sensors!</p>");
+    html += F("<p class=\"form-hint warning\">⚠️ Must match your sensors!</p>");
     html += F("<form id=\"encForm\" onsubmit=\"return saveSettings(event)\"><div class=\"form-group\"><label class=\"form-label\">Gateway Key</label><input type=\"text\" class=\"form-input\" name=\"gw_key\" value=\""); html += gateway_key;
     html += F("\"><p class=\"form-hint\">Sensors with different keys ignored</p></div><div class=\"form-group\"><label class=\"form-label\">Mode</label><select class=\"form-select\" name=\"enc_mode\"><option value=\"0\"");
     if (encryption_mode == 0) html += " selected";
