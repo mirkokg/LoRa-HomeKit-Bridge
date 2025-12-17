@@ -51,7 +51,7 @@ void setup() {
 
     // Initialize LED
     pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, HIGH);  // HIGH = OFF on this board
+    digitalWrite(LED_PIN, LOW);  // LOW = OFF (LED is active-high on this board)
 
     // Initialize Display
     Serial.println("[BOOT] Init display...");
@@ -68,7 +68,7 @@ void setup() {
 
     // Apply hardware settings
     if (!power_led_enabled) {
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_PIN, LOW);  // Turn off LED
     }
     if (display_available) {
         display.setBrightness(oled_brightness);
@@ -170,20 +170,9 @@ void loop() {
     // Enforce LED off state when LEDs are disabled
     // This overrides HomeSpan's status LED control
     static unsigned long lastLedCheck = 0;
-    static int debugCounter = 0;
     if (millis() - lastLedCheck > 100) {
         if (!power_led_enabled || !activity_led_enabled) {
-            // Force pin mode and state
-            pinMode(LED_PIN, OUTPUT);
-            digitalWrite(LED_PIN, HIGH);  // Keep LED off
-
-            // Debug: read back the pin state and print occasionally
-            if (debugCounter < 5) {
-                int pinState = digitalRead(LED_PIN);
-                Serial.printf("[DEBUG] LED enforcement: power_led=%d, activity_led=%d, wrote HIGH, read back: %d\n",
-                              power_led_enabled, activity_led_enabled, pinState);
-                debugCounter++;
-            }
+            digitalWrite(LED_PIN, LOW);  // Keep LED off
         }
         lastLedCheck = millis();
     }

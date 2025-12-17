@@ -64,9 +64,9 @@ void processLoRaPacket() {
 
     // Blink LED if enabled, keep off if disabled
     if (activity_led_enabled) {
-        digitalWrite(LED_PIN, LOW);
+        digitalWrite(LED_PIN, HIGH);  // Turn ON
     } else {
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_PIN, LOW);  // Keep OFF
     }
 
     // Wake OLED on activity
@@ -106,7 +106,7 @@ void processLoRaPacket() {
         Serial.printf("[LORA] Check: encryption mode=%s, key length=%d\n",
                       getEncryptionModeName(encryption_mode), encrypt_key_len);
         last_event = "ERR: Bad JSON";
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_PIN, LOW);  // Turn OFF
         return;
     }
 
@@ -114,7 +114,7 @@ void processLoRaPacket() {
     if (!doc.containsKey("k") || strcmp(doc["k"], gateway_key) != 0) {
         Serial.println("[LORA] Gateway key mismatch");
         last_event = "ERR: Wrong key";
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_PIN, LOW);  // Turn OFF
         return;
     }
 
@@ -122,7 +122,7 @@ void processLoRaPacket() {
     if (!doc.containsKey("id")) {
         Serial.println("[LORA] Missing device ID");
         last_event = "ERR: No device ID";
-        digitalWrite(LED_PIN, HIGH);
+        digitalWrite(LED_PIN, LOW);  // Turn OFF
         return;
     }
 
@@ -145,6 +145,6 @@ void processLoRaPacket() {
         Serial.println();
     }
 
-    // Turn LED off (HIGH) after activity
-    digitalWrite(LED_PIN, HIGH);
+    // Turn LED off after activity
+    digitalWrite(LED_PIN, LOW);
 }

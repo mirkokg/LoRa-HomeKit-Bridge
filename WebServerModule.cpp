@@ -1065,7 +1065,7 @@ void handleRoot() {
              power_led_enabled = webServer.arg("pwr_led") == "1";
          }
          if (!power_led_enabled) {
-             digitalWrite(LED_PIN, HIGH);
+             digitalWrite(LED_PIN, LOW);  // Turn off LED
          }
          saveSettings();
      }
@@ -1077,7 +1077,7 @@ void handleRoot() {
              activity_led_enabled = webServer.arg("act_led") == "1";
          }
          if (!activity_led_enabled) {
-             digitalWrite(LED_PIN, HIGH);  // Turn off LED immediately
+             digitalWrite(LED_PIN, LOW);  // Turn off LED immediately
          }
          saveSettings();
      }
