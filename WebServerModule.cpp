@@ -644,33 +644,38 @@ void handleRoot() {
          doc["b"] = 70;
      } else if (type == "update") {
          // Update existing test devices with new random values
+         int updatedCount = 0;
          for (int i = 0; i < device_count; i++) {
              if (strncmp(devices[i].id, "Test_", 5) == 0) {
+                 // Create JSON document with new values
+                 StaticJsonDocument<256> updateDoc;
+                 updateDoc["id"] = devices[i].id;
+                 updateDoc["b"] = devices[i].battery;  // Keep existing battery
+
                  if (devices[i].has_temp) {
-                     devices[i].temperature = 20.0 + (random(0, 100) / 10.0);
-                     if (devices[i].tempChar) devices[i].tempChar->setVal(devices[i].temperature);
+                     updateDoc["t"] = 20.0 + (random(0, 100) / 10.0);
                  }
                  if (devices[i].has_hum) {
-                     devices[i].humidity = 40 + random(0, 40);
-                     if (devices[i].humChar) devices[i].humChar->setVal(devices[i].humidity);
+                     updateDoc["hu"] = 40 + random(0, 40);
                  }
                  if (devices[i].has_light) {
-                     devices[i].lux = 100 + random(0, 900);
-                     if (devices[i].lightChar) devices[i].lightChar->setVal(max(0.0001f, (float)devices[i].lux));
+                     updateDoc["l"] = 100 + random(0, 900);
                  }
                  if (devices[i].has_motion) {
-                     devices[i].motion = !devices[i].motion;
-                     if (devices[i].motionChar) devices[i].motionChar->setVal(devices[i].motion);
+                     updateDoc["m"] = !devices[i].motion ? 1 : 0;
                  }
                  if (devices[i].has_contact) {
-                     devices[i].contact = !devices[i].contact;
-                     if (devices[i].contactChar) devices[i].contactChar->setVal(devices[i].contact ? 0 : 1);
+                     updateDoc["c"] = !devices[i].contact ? 1 : 0;
                  }
+
+                 // Use updateDevice to properly update and log activity
+                 updateDevice(&devices[i], updateDoc, -50);
+                 updatedCount++;
                  Serial.printf("[TEST] Updated device: %s\n", devices[i].id);
              }
          }
          responseDoc["success"] = true;
-         responseDoc["message"] = "Updated all test devices!";
+         responseDoc["message"] = "Updated " + String(updatedCount) + " test device(s)!";
          serializeJson(responseDoc, response);
          webServer.send(200, "application/json", response);
          return;
