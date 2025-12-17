@@ -82,7 +82,7 @@ const char CSS_STYLES[] PROGMEM = R"rawliteral(
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none}.btn svg{width:14px;height:14px}.btn-primary{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:#fff}.btn-primary:hover{transform:translateY(-1px)}.btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-primary)}.btn-secondary:hover{background:var(--bg-card-hover)}.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{transform:translateY(-1px)}.btn-warning{background:var(--warning);color:#fff}.btn-group{display:flex;gap:8px;flex-wrap:wrap}
 .qr-container{display:flex;flex-direction:column;align-items:center;padding:20px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-primary)}.qr-code{width:160px;height:160px;background:#fff;border-radius:10px;padding:10px;margin-bottom:14px}.qr-code img{width:100%;height:100%;image-rendering:pixelated}.hk-code{font-family:monospace;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--text-primary);margin-bottom:4px}.hk-code-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
 .device-card{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:all .2s}.device-card:hover{border-color:var(--accent-primary)}.device-icon{width:40px;height:40px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-primary)}.device-icon svg{width:20px;height:20px;color:var(--accent-primary)}.device-info{flex:1}.device-name{font-weight:600;font-size:13px;margin-bottom:2px}.device-meta{font-size:10px;color:var(--text-muted);font-family:monospace}.device-signal{display:flex;gap:2px;align-items:flex-end;height:20px;margin-right:8px}.signal-bar{width:4px;background:var(--border-primary);border-radius:2px;transition:all .3s}.signal-bar:nth-child(1){height:6px}.signal-bar:nth-child(2){height:10px}.signal-bar:nth-child(3){height:14px}.signal-bar:nth-child(4){height:18px}.signal-bar.active{background:var(--accent-primary)}.device-actions{display:flex;gap:4px}.device-btn{padding:4px 8px;font-size:10px;border-radius:4px;cursor:pointer;background:var(--bg-card);border:1px solid var(--border-primary);color:var(--text-secondary);transition:all .2s}.device-btn:hover{border-color:var(--accent-primary);color:var(--accent-primary)}.device-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
-.activity-entry{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;display:flex;gap:8px;align-items:flex-start}.activity-time{color:var(--text-muted);font-family:monospace;white-space:nowrap;font-size:10px}.activity-device{color:var(--accent-primary);font-weight:600;white-space:nowrap;min-width:80px}.activity-msg{color:var(--text-secondary);font-family:monospace;flex:1;word-break:break-all;font-size:10px}
+.activity-entry{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;display:flex;gap:8px;align-items:flex-start;position:relative}.activity-time{color:var(--text-muted);font-family:monospace;white-space:nowrap;font-size:10px}.activity-device{color:var(--accent-primary);font-weight:600;white-space:nowrap;min-width:80px}.activity-msg{color:var(--text-secondary);font-family:monospace;flex:1;word-break:break-all;font-size:10px}.activity-delete{background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0;width:16px;height:16px;display:flex;align-items:center;justify-content:center;transition:color .2s;flex-shrink:0}.activity-delete:hover{color:var(--danger)}.activity-delete svg{width:12px;height:12px}
 .test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.test-btn{padding:14px;background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .2s;color:var(--text-primary)}.test-btn:hover{border-color:var(--accent-primary);background:var(--bg-card-hover);transform:translateY(-1px)}.test-btn svg{width:20px;height:20px;color:var(--accent-primary)}.test-btn span{font-size:11px;font-weight:600}
 .action-card{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.action-info{display:flex;align-items:center;gap:12px}.action-icon{width:36px;height:36px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-primary)}.action-icon svg{width:18px;height:18px}.action-icon.warning svg{color:var(--warning)}.action-icon.danger svg{color:var(--danger)}.action-text h4{font-size:13px;font-weight:600;margin-bottom:2px}.action-text p{font-size:11px;color:var(--text-muted)}
 .mobile-menu{display:none;position:fixed;top:12px;left:12px;z-index:200;width:36px;height:36px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;cursor:pointer;align-items:center;justify-content:center}.mobile-menu svg{width:20px;height:20px;color:var(--text-primary)}.sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99}
@@ -260,7 +260,7 @@ void handleRoot() {
             html += F("</div><div class=\"device-actions\"><button class=\"device-btn\" onclick=\"renameDevice('"); html += devices[i].id; html += F("','"); html += devices[i].name; html += F("')\">Rename</button><button class=\"device-btn danger\" onclick=\"removeDevice('"); html += devices[i].id; html += F("')\">Remove</button></div></div>");
         }
     }
-    html += F("</div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>Device Activity</h3></div>");
+    html += F("</div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>Device Activity</h3><button class=\"btn btn-secondary\" onclick=\"clearAllActivity()\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2\"></path></svg>Clear All</button></div>");
 
     // Display activity log entries (reverse chronological order)
     if (activityLogCount == 0) {
@@ -274,6 +274,9 @@ void handleRoot() {
             if (idx < 0) idx += MAX_ACTIVITY_LOG;
 
             ActivityEntry* entry = &activityLog[idx];
+
+            // Skip empty entries (deleted)
+            if (entry->device_name[0] == 0) continue;
 
             // Calculate time ago
             unsigned long secondsAgo = (millis() - entry->timestamp) / 1000;
@@ -292,7 +295,9 @@ void handleRoot() {
             html += entry->device_name;
             html += F("</span><span class=\"activity-msg\">");
             html += entry->message;
-            html += F("</span></div>");
+            html += F("</span><button class=\"activity-delete\" onclick=\"removeActivity(");
+            html += String(idx);
+            html += F(")\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M18 6L6 18M6 6l12 12\"></path></svg></button></div>");
         }
     }
 
@@ -402,6 +407,8 @@ void handleRoot() {
     html += F("function saveSettings(e){e.preventDefault();var f=new FormData(e.target);fetch('/save',{method:'POST',body:new URLSearchParams(f)}).then(()=>{alert('Saved! Restarting...');setTimeout(()=>location.reload(),5000);});return false;}");
     html += F("function toggleHw(k){fetch('/api/hardware?'+k+'=toggle').then(r=>r.json()).then(d=>{if(k==='pwr_led')document.getElementById('pwrLed').classList.toggle('active',d.pwr_led);if(k==='act_led')document.getElementById('actLed').classList.toggle('active',d.act_led);if(k==='oled_en')document.getElementById('oledEn').classList.toggle('active',d.oled_en);});}");
     html += F("function setHwVal(k,v){fetch('/api/hardware?'+k+'='+v);}");
+    html += F("function clearAllActivity(){if(confirm('Clear all activity?')){fetch('/api/activity/clear').then(r=>r.json()).then(d=>{if(d.success)location.reload();});}}");
+    html += F("function removeActivity(idx){fetch('/api/activity/remove?index='+idx).then(r=>r.json()).then(d=>{if(d.success)location.reload();});}");
     html += F("</script></body></html>");
     
     webServer.send(200, "text/html", html);
@@ -938,6 +945,59 @@ void handleRoot() {
      webServer.send(200, "application/json", response);
  }
  
+ // Clear all activity handler
+ void handleClearActivity() {
+     activityLogCount = 0;
+     activityLogIndex = 0;
+
+     StaticJsonDocument<128> doc;
+     doc["success"] = true;
+     doc["message"] = "Activity log cleared";
+
+     String response;
+     serializeJson(doc, response);
+     webServer.send(200, "application/json", response);
+ }
+
+ // Remove single activity entry handler
+ void handleRemoveActivity() {
+     String indexStr = webServer.arg("index");
+
+     StaticJsonDocument<128> doc;
+
+     if (indexStr.length() == 0) {
+         doc["success"] = false;
+         doc["message"] = "Missing index parameter";
+         String response;
+         serializeJson(doc, response);
+         webServer.send(400, "application/json", response);
+         return;
+     }
+
+     int idx = indexStr.toInt();
+
+     // Validate index
+     if (idx < 0 || idx >= MAX_ACTIVITY_LOG) {
+         doc["success"] = false;
+         doc["message"] = "Invalid index";
+         String response;
+         serializeJson(doc, response);
+         webServer.send(400, "application/json", response);
+         return;
+     }
+
+     // Mark entry as empty by clearing the device name
+     activityLog[idx].device_name[0] = 0;
+     activityLog[idx].message[0] = 0;
+
+     doc["success"] = true;
+     doc["message"] = "Activity entry removed";
+
+     String response;
+     serializeJson(doc, response);
+     webServer.send(200, "application/json", response);
+ }
+
  // Captive portal handler - redirect all requests to root
  void handleNotFound() {
      if (ap_mode) {
@@ -965,6 +1025,8 @@ void setupWebServer() {
     webServer.on("/api/restart", handleRestart);
     webServer.on("/api/settype", handleSetSensorType);
     webServer.on("/api/hardware", handleHardwareSettings);
+    webServer.on("/api/activity/clear", handleClearActivity);
+    webServer.on("/api/activity/remove", handleRemoveActivity);
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 
