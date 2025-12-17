@@ -21,6 +21,33 @@ extern unsigned long boot_time;
 extern uint32_t packets_received;
 extern int device_count;
 
+// ============== Activity Log ==============
+#define MAX_ACTIVITY_LOG 20
+
+struct ActivityEntry {
+    unsigned long timestamp;
+    char device_name[32];
+    char message[64];
+};
+
+ActivityEntry activityLog[MAX_ACTIVITY_LOG];
+int activityLogCount = 0;
+int activityLogIndex = 0;  // Circular buffer index
+
+void logActivity(const char* deviceName, const char* message) {
+    ActivityEntry* entry = &activityLog[activityLogIndex];
+    entry->timestamp = millis();
+    strncpy(entry->device_name, deviceName, 31);
+    entry->device_name[31] = 0;
+    strncpy(entry->message, message, 63);
+    entry->message[63] = 0;
+
+    activityLogIndex = (activityLogIndex + 1) % MAX_ACTIVITY_LOG;
+    if (activityLogCount < MAX_ACTIVITY_LOG) {
+        activityLogCount++;
+    }
+}
+
 // ============== Global Objects ==============
 WebServer webServer(80);
 
@@ -54,7 +81,8 @@ const char CSS_STYLES[] PROGMEM = R"rawliteral(
 .toggle-btn{width:44px;height:24px;background:var(--bg-primary);border-radius:12px;cursor:pointer;position:relative;border:2px solid var(--border-primary);transition:all .3s;flex-shrink:0}.toggle-btn::after{content:'';position:absolute;width:16px;height:16px;background:var(--text-muted);border-radius:50%;top:2px;left:2px;transition:all .3s}.toggle-btn.active{background:var(--accent-glow);border-color:var(--accent-primary)}.toggle-btn.active::after{background:var(--accent-primary);transform:translateX(20px)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none}.btn svg{width:14px;height:14px}.btn-primary{background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:#fff}.btn-primary:hover{transform:translateY(-1px)}.btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-primary)}.btn-secondary:hover{background:var(--bg-card-hover)}.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{transform:translateY(-1px)}.btn-warning{background:var(--warning);color:#fff}.btn-group{display:flex;gap:8px;flex-wrap:wrap}
 .qr-container{display:flex;flex-direction:column;align-items:center;padding:20px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-primary)}.qr-code{width:160px;height:160px;background:#fff;border-radius:10px;padding:10px;margin-bottom:14px}.qr-code img{width:100%;height:100%;image-rendering:pixelated}.hk-code{font-family:monospace;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--text-primary);margin-bottom:4px}.hk-code-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-.device-card{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:all .2s}.device-card:hover{border-color:var(--accent-primary)}.device-icon{width:40px;height:40px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-primary)}.device-icon svg{width:20px;height:20px;color:var(--accent-primary)}.device-info{flex:1}.device-name{font-weight:600;font-size:13px;margin-bottom:2px}.device-meta{font-size:10px;color:var(--text-muted);font-family:monospace}.device-actions{display:flex;gap:4px}.device-btn{padding:4px 8px;font-size:10px;border-radius:4px;cursor:pointer;background:var(--bg-card);border:1px solid var(--border-primary);color:var(--text-secondary);transition:all .2s}.device-btn:hover{border-color:var(--accent-primary);color:var(--accent-primary)}.device-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.device-card{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:all .2s}.device-card:hover{border-color:var(--accent-primary)}.device-icon{width:40px;height:40px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-primary)}.device-icon svg{width:20px;height:20px;color:var(--accent-primary)}.device-info{flex:1}.device-name{font-weight:600;font-size:13px;margin-bottom:2px}.device-meta{font-size:10px;color:var(--text-muted);font-family:monospace}.device-signal{display:flex;gap:2px;align-items:flex-end;height:20px;margin-right:8px}.signal-bar{width:4px;background:var(--border-primary);border-radius:2px;transition:all .3s}.signal-bar:nth-child(1){height:6px}.signal-bar:nth-child(2){height:10px}.signal-bar:nth-child(3){height:14px}.signal-bar:nth-child(4){height:18px}.signal-bar.active{background:var(--accent-primary)}.device-actions{display:flex;gap:4px}.device-btn{padding:4px 8px;font-size:10px;border-radius:4px;cursor:pointer;background:var(--bg-card);border:1px solid var(--border-primary);color:var(--text-secondary);transition:all .2s}.device-btn:hover{border-color:var(--accent-primary);color:var(--accent-primary)}.device-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.activity-entry{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;display:flex;gap:8px;align-items:flex-start}.activity-time{color:var(--text-muted);font-family:monospace;white-space:nowrap;font-size:10px}.activity-device{color:var(--accent-primary);font-weight:600;white-space:nowrap}.activity-msg{color:var(--text-secondary);font-family:monospace;flex:1}
 .test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.test-btn{padding:14px;background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .2s;color:var(--text-primary)}.test-btn:hover{border-color:var(--accent-primary);background:var(--bg-card-hover);transform:translateY(-1px)}.test-btn svg{width:20px;height:20px;color:var(--accent-primary)}.test-btn span{font-size:11px;font-weight:600}
 .action-card{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.action-info{display:flex;align-items:center;gap:12px}.action-icon{width:36px;height:36px;background:var(--bg-card);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-primary)}.action-icon svg{width:18px;height:18px}.action-icon.warning svg{color:var(--warning)}.action-icon.danger svg{color:var(--danger)}.action-text h4{font-size:13px;font-weight:600;margin-bottom:2px}.action-text p{font-size:11px;color:var(--text-muted)}
 .mobile-menu{display:none;position:fixed;top:12px;left:12px;z-index:200;width:36px;height:36px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;cursor:pointer;align-items:center;justify-content:center}.mobile-menu svg{width:20px;height:20px;color:var(--text-primary)}.sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99}
@@ -63,7 +91,7 @@ const char CSS_STYLES[] PROGMEM = R"rawliteral(
 
 void handleRoot() {
     String html;
-    html.reserve(24000);
+    html.reserve(32000);
     
     bool isPaired = homekit_started && (homeSpan.controllerListBegin() != homeSpan.controllerListEnd());
     int activeDevices = getActiveDeviceCount();
@@ -146,17 +174,48 @@ void handleRoot() {
     html += F("</div></div></div>");
     
     // Devices Page
-    html += F("<div class=\"page\" id=\"page-devices\"><div class=\"page-header\"><h1 class=\"page-title\">Devices</h1><p class=\"page-desc\">Manage connected devices</p></div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">Connected ("); html += String(activeDevices); html += F(")</h3><button class=\"btn btn-secondary\" onclick=\"location.reload()\">Refresh</button></div>");
+    html += F("<div class=\"page\" id=\"page-devices\"><div class=\"page-header\"><h1 class=\"page-title\">Devices</h1><p class=\"page-description\">Manage your connected LoRa devices</p></div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"></rect><line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"></line><line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"></line></svg>Connected Devices ("); html += String(activeDevices); html += F(")</h3><button class=\"btn btn-secondary\" onclick=\"location.reload()\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M23 4v6h-6M1 20v-6h6\"></path><path d=\"M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15\"></path></svg>Refresh</button></div>");
     if (activeDevices == 0) {
-        html += F("<p style=\"color:var(--text-muted);font-size:12px\">No devices yet. Add test devices or wait for LoRa sensors.</p>");
+        html += F("<p style=\"color:var(--text-muted);font-size:14px\">No devices yet. Add test devices or wait for LoRa sensors.</p>");
     } else {
         for (int i = 0; i < device_count; i++) {
             if (!devices[i].active) continue;
-            html += F("<div class=\"device-card\"><div class=\"device-icon\"><svg fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><rect width=\"16\" height=\"16\" x=\"4\" y=\"4\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></div><div class=\"device-info\"><div class=\"device-name\">"); html += devices[i].name;
+
+            // Debug logging
+            Serial.printf("[WEB] Device %s: has_contact=%d, has_motion=%d, contact_type=%d, motion_type=%d\n",
+                         devices[i].id, devices[i].has_contact, devices[i].has_motion,
+                         devices[i].contact_type, devices[i].motion_type);
+
+            // Determine device type label
+            String deviceType = "Sensor";
+            if (devices[i].has_motion) {
+                deviceType = "Motion Sensor";
+            } else if (devices[i].has_contact) {
+                deviceType = "Contact Sensor";
+            } else if (devices[i].has_temp && devices[i].has_hum) {
+                deviceType = "Climate Sensor";
+            } else if (devices[i].has_temp) {
+                deviceType = "Temperature Sensor";
+            } else if (devices[i].has_hum) {
+                deviceType = "Humidity Sensor";
+            } else if (devices[i].has_light) {
+                deviceType = "Light Sensor";
+            }
+
+            // Calculate signal bars based on RSSI
+            int signalBars = 4;
+            if (devices[i].rssi < -80) signalBars = 1;
+            else if (devices[i].rssi < -70) signalBars = 2;
+            else if (devices[i].rssi < -60) signalBars = 3;
+
+            html += F("<div class=\"device-card\"><div class=\"device-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"></rect><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg></div><div class=\"device-info\"><div class=\"device-name\">");
+            html += devices[i].name;
             html += F("</div><div class=\"device-meta\">");
-            if (devices[i].has_temp) { html += "T:" + String(devices[i].temperature,1) + "C "; }
-            if (devices[i].has_hum) { html += "H:" + String((int)devices[i].humidity) + "% "; }
-            html += "RSSI:" + String(devices[i].rssi);
+            html += deviceType;
+            html += " • RSSI: " + String(devices[i].rssi) + "dBm";
+            if (devices[i].has_batt) {
+                html += " • " + String((int)devices[i].battery) + "%";
+            }
             html += F("</div>");
 
             // Add sensor type selector for motion/contact sensors
@@ -192,9 +251,51 @@ void handleRoot() {
                 html += F(">CO</option></select></div>");
             }
 
+            html += F("</div><div class=\"device-signal\">");
+            for (int bar = 1; bar <= 4; bar++) {
+                html += F("<div class=\"signal-bar");
+                if (bar <= signalBars) html += F(" active");
+                html += F("\"></div>");
+            }
             html += F("</div><div class=\"device-actions\"><button class=\"device-btn\" onclick=\"renameDevice('"); html += devices[i].id; html += F("','"); html += devices[i].name; html += F("')\">Rename</button><button class=\"device-btn danger\" onclick=\"removeDevice('"); html += devices[i].id; html += F("')\">Remove</button></div></div>");
         }
     }
+    html += F("</div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>Device Activity</h3></div>");
+
+    // Display activity log entries (reverse chronological order)
+    if (activityLogCount == 0) {
+        html += F("<p style=\"color: var(--text-muted); font-size: 14px;\">No recent activity. Waiting for device messages...</p>");
+    } else {
+        // Show entries in reverse order (newest first)
+        int displayCount = min(activityLogCount, 10);  // Show last 10 entries
+        for (int i = 0; i < displayCount; i++) {
+            // Calculate index for reverse chronological order
+            int idx = (activityLogIndex - 1 - i + MAX_ACTIVITY_LOG) % MAX_ACTIVITY_LOG;
+            if (idx < 0) idx += MAX_ACTIVITY_LOG;
+
+            ActivityEntry* entry = &activityLog[idx];
+
+            // Calculate time ago
+            unsigned long secondsAgo = (millis() - entry->timestamp) / 1000;
+            String timeStr;
+            if (secondsAgo < 60) {
+                timeStr = String(secondsAgo) + "s ago";
+            } else if (secondsAgo < 3600) {
+                timeStr = String(secondsAgo / 60) + "m ago";
+            } else {
+                timeStr = String(secondsAgo / 3600) + "h ago";
+            }
+
+            html += F("<div class=\"activity-entry\"><span class=\"activity-time\">");
+            html += timeStr;
+            html += F("</span><span class=\"activity-device\">");
+            html += entry->device_name;
+            html += F("</span><span class=\"activity-msg\">");
+            html += entry->message;
+            html += F("</span></div>");
+        }
+    }
+
     html += F("</div></div>");
     
     // Test Page

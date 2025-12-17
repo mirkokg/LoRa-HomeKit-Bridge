@@ -9,6 +9,7 @@
 #include "hardware/LoRaModule.h"
 #include "hardware/Display.h"
 #include "core/Config.h"
+#include "network/WebServerModule.h"
 
 // ============== Mode Flags ==============
 bool homekit_started = false;
@@ -314,4 +315,7 @@ void updateDevice(Device* dev, JsonDocument& doc, int rssi) {
     }
 
     last_event = eventStr;
+
+    // Log activity for web UI
+    logActivity(dev->name, eventStr.c_str());
 }

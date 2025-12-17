@@ -12,6 +12,9 @@
 // ============== Global Objects ==============
 extern WebServer webServer;
 
+// ============== Activity Logging ==============
+void logActivity(const char* deviceName, const char* message);
+
 // ============== Web Server Functions ==============
 void setupWebServer();
 void handleRoot();
