@@ -142,7 +142,7 @@ On first boot (or after factory reset), the bridge starts in **Setup Mode**:
    - Password: `12345678`
 
 2. **Open Configuration Page:**
-   - Go to `http://<bridge-ip>:8080` in your browser
+   - Go to `http://<bridge-ip>` in your browser
    - Or wait for captive portal redirect
 
 3. **Configure Settings:**
@@ -171,7 +171,7 @@ On first boot (or after factory reset), the bridge starts in **Setup Mode**:
 
 1. Open the **Home** app on your iPhone/iPad
 2. Tap **+** → **Add Accessory**
-3. **Scan the QR code** shown on the device screen and web interface at `http://<bridge-ip>:8080`
+3. **Scan the QR code** shown on the device screen and web interface at `http://<bridge-ip>`
 
 ### Method 2: Manual Code Entry
 
@@ -194,7 +194,7 @@ On first boot (or after factory reset), the bridge starts in **Setup Mode**:
 
 ## 🌐 Web Interface
 
-Access the configuration web UI at `http://<bridge-ip>:8080`
+Access the configuration web UI at `http://<bridge-ip>`
 
 ### Status Section
 - View WiFi connection status and IP address
@@ -398,8 +398,8 @@ You can remap contact or motion sensors to different HomeKit service types via t
 | Specification | Value |
 |---------------|-------|
 | Max Devices | 20 |
-| Web Server Port | 8080 |
-| HomeKit Port | 80 (HAP) |
+| Web Server Port | 80 |
+| HomeKit Port | 51827 (HAP) |
 | Device Timeout | 1 hour |
 | Display Update | Every 2 seconds |
 | Heartbeat Log | Every 30 seconds |

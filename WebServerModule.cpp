@@ -22,7 +22,7 @@ extern uint32_t packets_received;
 extern int device_count;
 
 // ============== Global Objects ==============
-WebServer webServer(8080);
+WebServer webServer(80);
 
 // ============== Web Server Handlers ==============
 // The web UI is served as a multi-page application with client-side navigation
@@ -831,5 +831,5 @@ void setupWebServer() {
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 
-    Serial.println("[WEBSERVER] Started on port 8080");
+    Serial.println("[WEBSERVER] Started on port 80");
 }

@@ -19,7 +19,7 @@ extern bool power_led_enabled;
 // ============== HomeKit Setup ==============
 void setupHomeKit() {
     displayProgress("HomeKit", "Initializing...", 0);
-
+    homeSpan.setPortNum(51827);
     Serial.println("[HOMEKIT] Configuring...");
     homeSpan.setLogLevel(1);
 

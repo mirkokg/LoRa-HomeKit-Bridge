@@ -107,14 +107,14 @@ void setup() {
         setupHomeKit();
     }
 
-    // Start Web Server on port 8080 (HomeSpan uses port 80 for HAP)
-    Serial.println("[BOOT] Starting web server on port 8080...");
+    // Start Web Server on port 80 (HomeSpan uses port 80 for HAP)
+    Serial.println("[BOOT] Starting web server on port 80...");
     displayProgress("Web Server", "Starting...", 0);
     setupWebServer();
     displayProgress("Web Server", "Ready!", 100);
 
     IPAddress ip = ap_mode ? WiFi.softAPIP() : WiFi.localIP();
-    Serial.printf("[BOOT] Web UI: http://%s:8080/\n", ip.toString().c_str());
+    Serial.printf("[BOOT] Web UI: http://%s/\n", ip.toString().c_str());
 
     delay(500);
 
