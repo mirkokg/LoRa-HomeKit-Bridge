@@ -26,10 +26,11 @@ Device will act as a HomeKit bridge and all of the detected PricelessToolkit LoR
 
 ## ✨ Planned Features
 
-- Add unique links for Settings pages
 - MQTT Support
+- Add option for user authentication
 - Support for OTA updates
 - Support for other boards
+- Automatic builds
 
 ### Supported Sensor Types
 
