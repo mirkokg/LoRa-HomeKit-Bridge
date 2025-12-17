@@ -226,11 +226,11 @@ void handleRoot() {
                 if (devices[i].contact_type == CONTACT_TYPE_CONTACT) html += " selected";
                 html += F(">Contact</option><option value=\"1\"");
                 if (devices[i].contact_type == CONTACT_TYPE_LEAK) html += " selected";
-                html += F(">Leak</option><option value=\"2\"");
+                html += F(">⚡ Leak</option><option value=\"2\"");
                 if (devices[i].contact_type == CONTACT_TYPE_SMOKE) html += " selected";
-                html += F(">Smoke</option><option value=\"3\"");
+                html += F(">⚡ Smoke</option><option value=\"3\"");
                 if (devices[i].contact_type == CONTACT_TYPE_CO) html += " selected";
-                html += F(">CO</option><option value=\"4\"");
+                html += F(">⚡ CO</option><option value=\"4\"");
                 if (devices[i].contact_type == CONTACT_TYPE_OCCUPANCY) html += " selected";
                 html += F(">Occupancy</option></select></div>");
             }
@@ -244,11 +244,11 @@ void handleRoot() {
                 if (devices[i].motion_type == MOTION_TYPE_OCCUPANCY) html += " selected";
                 html += F(">Occupancy</option><option value=\"2\"");
                 if (devices[i].motion_type == MOTION_TYPE_LEAK) html += " selected";
-                html += F(">Leak</option><option value=\"3\"");
+                html += F(">⚡ Leak</option><option value=\"3\"");
                 if (devices[i].motion_type == MOTION_TYPE_SMOKE) html += " selected";
-                html += F(">Smoke</option><option value=\"4\"");
+                html += F(">⚡ Smoke</option><option value=\"4\"");
                 if (devices[i].motion_type == MOTION_TYPE_CO) html += " selected";
-                html += F(">CO</option></select></div>");
+                html += F(">⚡ CO</option></select></div>");
             }
 
             html += F("</div><div class=\"device-signal\">");
@@ -326,15 +326,15 @@ void handleRoot() {
     if (lora_frequency > 800 && lora_frequency < 900) html += " selected";
     html += F(">868 MHz</option><option value=\"915.0\"");
     if (lora_frequency > 900) html += " selected";
-    html += F(">915 MHz</option></select></div><div class=\"form-group\"><label class=\"form-label\">Spreading Factor</label><select class=\"form-select\" name=\"lora_sf\">");
+    html += F(">915 MHz</option></select><p class=\"form-hint\">Select based on your region's regulations</p></div><div class=\"form-group\"><label class=\"form-label\">Spreading Factor</label><select class=\"form-select\" name=\"lora_sf\">");
     for (int sf = 6; sf <= 12; sf++) { html += "<option value=\"" + String(sf) + "\""; if (lora_sf == sf) html += " selected"; html += ">SF" + String(sf) + "</option>"; }
-    html += F("</select></div><div class=\"form-group\"><label class=\"form-label\">Bandwidth</label><select class=\"form-select\" name=\"lora_bw\"><option value=\"125000\"");
+    html += F("</select><p class=\"form-hint\">Higher SF = longer range, lower data rate</p></div><div class=\"form-group\"><label class=\"form-label\">Bandwidth</label><select class=\"form-select\" name=\"lora_bw\"><option value=\"125000\"");
     if (lora_bw == 125000) html += " selected";
     html += F(">125 kHz</option><option value=\"250000\"");
     if (lora_bw == 250000) html += " selected";
     html += F(">250 kHz</option><option value=\"500000\"");
     if (lora_bw == 500000) html += " selected";
-    html += F(">500 kHz</option></select></div><div class=\"form-group\"><label class=\"form-label\">Coding Rate</label><select class=\"form-select\" name=\"lora_cr\"><option value=\"5\"");
+    html += F(">500 kHz</option></select><p class=\"form-hint\">Wider = faster data, narrower = better range</p></div><div class=\"form-group\"><label class=\"form-label\">Coding Rate</label><select class=\"form-select\" name=\"lora_cr\"><option value=\"5\"");
     if (lora_cr == 5) html += " selected";
     html += F(">4/5</option><option value=\"6\"");
     if (lora_cr == 6) html += " selected";
@@ -342,9 +342,9 @@ void handleRoot() {
     if (lora_cr == 7) html += " selected";
     html += F(">4/7</option><option value=\"8\"");
     if (lora_cr == 8) html += " selected";
-    html += F(">4/8</option></select></div><div class=\"form-group\"><label class=\"form-label\">Preamble</label><input type=\"number\" class=\"form-input\" name=\"lora_pre\" value=\""); html += String(lora_preamble);
-    html += F("\" min=\"6\" max=\"65535\"></div><div class=\"form-group\"><label class=\"form-label\">Sync Word</label><input type=\"text\" class=\"form-input\" name=\"lora_sync\" value=\""); html += syncHex;
-    html += F("\" maxlength=\"2\"></div></div><button type=\"submit\" class=\"btn btn-primary\">Save & Restart</button></form></div></div>");
+    html += F(">4/8</option></select><p class=\"form-hint\">Higher values add error correction at slower speeds</p></div><div class=\"form-group\"><label class=\"form-label\">Preamble</label><input type=\"number\" class=\"form-input\" name=\"lora_pre\" value=\""); html += String(lora_preamble);
+    html += F("\" min=\"6\" max=\"65535\"><p class=\"form-hint\">Longer preambles improve sync but increase airtime</p></div><div class=\"form-group\"><label class=\"form-label\">Sync Word</label><input type=\"text\" class=\"form-input\" name=\"lora_sync\" value=\""); html += syncHex;
+    html += F("\" maxlength=\"2\"><p class=\"form-hint\">Network identifier - must match all devices</p></div></div><button type=\"submit\" class=\"btn btn-primary\">Save & Restart</button></form></div></div>");
     
     // Encryption Page
     html += F("<div class=\"page\" id=\"page-encryption\"><div class=\"page-header\"><h1 class=\"page-title\">Encryption</h1><p class=\"page-desc\">Configure data encryption</p></div><div class=\"card\"><div class=\"card-header\"><h3 class=\"card-title\">Encryption</h3></div>");
