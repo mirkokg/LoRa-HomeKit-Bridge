@@ -106,7 +106,7 @@ Open **Sketch** → **Include Library** → **Manage Libraries** and install:
 
 **Run this command:**
 
-`touch ~/Documents/Arduino/libraries/QRCode/src/QRCode_Library.h`
+`echo '#include "qrcode.h"' > ~/Documents/Arduino/libraries/QRCode/src/QRCode_Library.h`
 
 ### Step 4: Configure Board Settings
 
