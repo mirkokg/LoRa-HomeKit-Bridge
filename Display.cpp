@@ -189,12 +189,12 @@ void displayStatus() {
         // AP Mode display
         display.drawString(0, 16, "WiFi: " + String(AP_SSID));
         display.drawString(0, 28, "Pass: " + String(AP_PASSWORD));
-        display.drawString(0, 40, "IP: " + WiFi.softAPIP().toString());
+        display.drawString(0, 40, "IP: " + WiFi.softAPIP().toString() + ":8080");
         display.drawString(0, 52, "Open browser to setup");
     } else {
         // Normal operation display
         if (WiFi.status() == WL_CONNECTED) {
-            display.drawString(0, 16, WiFi.localIP().toString());
+            display.drawString(0, 16, WiFi.localIP().toString() + ":8080");
         } else {
             display.drawString(0, 16, "WiFi: Reconnecting...");
         }

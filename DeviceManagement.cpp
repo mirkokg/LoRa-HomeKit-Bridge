@@ -33,11 +33,7 @@ void setupHomeKit() {
     homeSpan.setQRID(HOMEKIT_SETUP_ID);
     homeSpan.enableOTA();
 
-    // Use standard HomeKit port 51827 instead of default port 80
-    homeSpan.setPort(51827);
-
     Serial.printf("[HOMEKIT] Pairing code: %s\n", homekit_code_display);
-    Serial.println("[HOMEKIT] HAP port: 51827");
 
     displayProgress("HomeKit", "Creating bridge...", 50);
 
