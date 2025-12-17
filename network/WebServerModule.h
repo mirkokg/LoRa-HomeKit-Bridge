@@ -22,6 +22,7 @@ void requireAuth();
 // ============== Web Server Functions ==============
 void setupWebServer();
 void handleRoot();
+void handleFavicon();
 void handleSave();
 void handleReset();
 void handleScan();

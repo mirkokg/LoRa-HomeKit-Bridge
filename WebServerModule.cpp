@@ -1239,6 +1239,20 @@ void handleRoot() {
      webServer.send(200, "application/json", response);
  }
 
+ // Favicon handler - serves SVG icon
+ void handleFavicon() {
+     const char* svg = R"rawliteral(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<rect width="32" height="32" rx="6" fill="#f0883e"/>
+<circle cx="16" cy="20" r="2" fill="#fff"/>
+<path d="M16 18v-6M12 14l4-4 4 4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 17c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+</svg>)rawliteral";
+
+     webServer.sendHeader("Content-Type", "image/svg+xml");
+     webServer.sendHeader("Cache-Control", "public, max-age=86400");
+     webServer.send(200, "image/svg+xml", svg);
+ }
+
  // Captive portal handler - redirect all requests to root
  void handleNotFound() {
      if (ap_mode) {
@@ -1254,6 +1268,7 @@ void handleRoot() {
 void setupWebServer() {
     // Main page
     webServer.on("/", handleRoot);
+    webServer.on("/favicon.ico", handleFavicon);
 
     // API endpoints
     webServer.on("/save", HTTP_POST, handleSave);
