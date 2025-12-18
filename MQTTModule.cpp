@@ -66,6 +66,13 @@ void reconnectMQTT() {
 }
 
 // MQTT loop - call in main loop
+// Helper to check connection status
+bool isMQTTConnected() {
+  if (!mqtt_enabled)
+    return false;
+  return mqttClient.connected();
+}
+
 void loopMQTT() {
   if (!mqtt_enabled) {
     return;

@@ -21,6 +21,7 @@ void initMQTT();
 void connectMQTT();
 void reconnectMQTT();
 void loopMQTT();
+bool isMQTTConnected();
 bool testMQTTConnection(const char *server, uint16_t port, const char *username,
                         const char *password);
 void publishDeviceData(Device *dev, JsonDocument &doc, int rssi);

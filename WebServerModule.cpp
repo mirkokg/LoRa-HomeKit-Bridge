@@ -332,6 +332,24 @@ void handleRoot() {
           "class=\"status-label\">Network</span><span class=\"status-value\">");
     html += wifi_ssid;
     html += F("</span></div>");
+
+    // MQTT Status
+    if (mqtt_enabled) {
+      html +=
+          F("<div class=\"status-item\"><span "
+            "class=\"status-label\">MQTT</span><span class=\"status-value\">");
+      if (isMQTTConnected()) {
+        html += F("<span class=\"badge success\">Connected</span>");
+      } else {
+        html += F("<span class=\"badge danger\">Disconnected</span>");
+      }
+      html += F("</span></div>");
+      html += F(
+          "<div class=\"status-item\"><span "
+          "class=\"status-label\">Broker</span><span class=\"status-value\">");
+      html += mqtt_server;
+      html += F("</span></div>");
+    }
   }
   html += F(
       "</div></div><div class=\"grid-2\"><div class=\"card\"><div "
