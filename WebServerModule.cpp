@@ -934,8 +934,8 @@ void handleRoot() {
     html += F(" active");
   html += F("\" id=\"authEnabled\" onclick=\"toggleAuth()\"></div></div>");
   if (!auth_enabled) {
-    html +=
-        F("<div class=\"form-hint warning\" style=\"margin-top:12px;color:#f59e0b\">");
+    html += F("<div class=\"form-hint warning\" "
+              "style=\"margin-top:12px;color:#f59e0b\">");
     html += F("⚠️ Warning: Interface is unprotected!</div>");
   }
   html += F("<div id=\"authForm\" style=\"");
@@ -1996,7 +1996,11 @@ void handleMQTTTest() {
     doc["message"] = "Connection successful!";
   } else {
     doc["success"] = false;
-    doc["message"] = "Connection failed. Check server, port, and credentials.";
+    String debugMsg = "Failed at " + testServer + ":" + String(testPort);
+    debugMsg += " User:" + testUsername;
+    debugMsg += " PwdLen:" + String(testPassword.length());
+    debugMsg += " SavedLen:" + String(strlen(mqtt_password));
+    doc["message"] = debugMsg;
   }
 
   serializeJson(doc, response);
