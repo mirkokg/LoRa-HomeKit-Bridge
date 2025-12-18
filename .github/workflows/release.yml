@@ -1,0 +1,130 @@
+name: Release Firmware
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install ESP32 platform
+      run: |
+        arduino-cli config init
+        arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+        arduino-cli core update-index
+        arduino-cli core install esp32:esp32
+
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "HomeSpan"
+        arduino-cli lib install "LoRa"
+        arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays"
+        arduino-cli lib install "QRCode"
+        arduino-cli lib install "PubSubClient"
+
+    - name: Create QRCode library compatibility header
+      run: |
+        echo '#include "qrcode.h"' > ~/Arduino/libraries/QRCode/src/QRCode_Library.h
+
+    - name: Get version from tag
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Compile firmware
+      run: |
+        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80 \
+          --output-dir ./build \
+          LoRa-HomeKit-Bridge.ino
+
+    - name: Rename firmware files
+      run: |
+        mv build/LoRa-HomeKit-Bridge.ino.bin build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin
+        mv build/LoRa-HomeKit-Bridge.ino.elf build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.elf
+        mv build/LoRa-HomeKit-Bridge.ino.bootloader.bin build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bootloader.bin 2>/dev/null || true
+        mv build/LoRa-HomeKit-Bridge.ino.partitions.bin build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.partitions.bin 2>/dev/null || true
+
+    - name: Generate checksum
+      run: |
+        cd build
+        sha256sum LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin > LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.sha256
+
+    - name: Create release notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        ## LoRa HomeKit Bridge Firmware ${{ steps.version.outputs.VERSION }}
+
+        ### Installation Instructions
+
+        **For ESP32 TTGO LoRa32 V2.1_1.6:**
+
+        1. Download `LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin`
+        2. Flash using one of these methods:
+
+        **Option A: Using esptool.py**
+        ```bash
+        esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 \
+          --before default_reset --after hard_reset write_flash \
+          -z --flash_mode qio --flash_freq 80m --flash_size 4MB \
+          0x10000 LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin
+        ```
+
+        **Option B: Using Arduino IDE**
+        - Tools → Board → ESP32 Dev Module
+        - Tools → Flash Size → 4MB
+        - Tools → Partition Scheme → Huge APP (3MB No OTA/1MB SPIFFS)
+        - Sketch → Upload Compiled Binary → Select the .bin file
+
+        **Option C: Using ESP Flash Download Tool**
+        - Download from [Espressif](https://www.espressif.com/en/support/download/other-tools)
+        - Load the .bin file at address 0x10000
+        - Select flash settings: QIO, 80MHz, 4MB
+
+        ### Verification
+
+        Verify the download:
+        ```bash
+        sha256sum -c LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.sha256
+        ```
+
+        ### What's Changed
+
+        See commit history for detailed changes.
+        EOF
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: Release ${{ steps.version.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin
+          build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.elf
+          build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.sha256
+          build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bootloader.bin
+          build/LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.partitions.bin
