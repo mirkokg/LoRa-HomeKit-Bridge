@@ -6,10 +6,10 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <Arduino.h>
-#include <Preferences.h>
 #include "../core/Config.h"
 #include "../core/Device.h"
+#include <Arduino.h>
+#include <Preferences.h>
 
 // ============== Global Objects ==============
 extern Preferences prefs;
@@ -47,18 +47,18 @@ extern bool mqtt_enabled;
 extern char mqtt_server[64];
 extern uint16_t mqtt_port;
 extern char mqtt_username[32];
-extern char mqtt_password[64];
+extern char mqtt_password[128];
 
 // ============== Settings Functions ==============
-void toBase36(uint64_t num, char* out, int len);
+void toBase36(uint64_t num, char *out, int len);
 void generatePairingCode();
 void loadSettings();
 void saveSettings();
 void clearSettings();
 
 // HTTP Authentication functions
-void hashPassword(const char* password, uint8_t* hash);
-bool verifyPassword(const char* password, const uint8_t* hash);
+void hashPassword(const char *password, uint8_t *hash);
+bool verifyPassword(const char *password, const uint8_t *hash);
 
 // Device persistence
 void saveDevices();
