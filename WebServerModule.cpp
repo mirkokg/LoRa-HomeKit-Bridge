@@ -935,7 +935,7 @@ void handleRoot() {
   html += F("\" id=\"authEnabled\" onclick=\"toggleAuth()\"></div></div>");
   if (!auth_enabled) {
     html +=
-        F("<div class=\"form-hint\" style=\"margin-top:12px;color:#f59e0b\">");
+        F("<div class=\"form-hint warning\" style=\"margin-top:12px;color:#f59e0b\">");
     html += F("⚠️ Warning: Interface is unprotected!</div>");
   }
   html += F("<div id=\"authForm\" style=\"");

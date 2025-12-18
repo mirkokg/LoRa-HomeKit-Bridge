@@ -104,7 +104,7 @@ Open **Sketch** → **Include Library** → **Manage Libraries** and install:
 | **ArduinoJson** | Benoit Blanchon | ≥6.21.0 |
 | **ESP8266 and ESP32 OLED driver for SSD1306 displays** | ThingPulse | ≥4.4.0 |
 | **QRCode** | Richard Moore | ≥0.0.1 |
-
+| **PubSubClient3** | Nick O'Leary | ≥3.3.0 |
 **Run this command:**
 
 `echo '#include "qrcode.h"' > ~/Documents/Arduino/libraries/QRCode/src/QRCode_Library.h`
@@ -437,7 +437,7 @@ Built with:
 - **LoRa** by Sandeep Mistry
 - **ArduinoJson** by Benoit Blanchon
 - **SSD1306 Driver** by ThingPulse
-- **PubSubClient** by Nick O'Leary
+- **PubSubClient3** by Nick O'Leary
 
 ---
 
