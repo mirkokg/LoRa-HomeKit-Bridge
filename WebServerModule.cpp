@@ -250,6 +250,11 @@ void handleRoot() {
       "d=\"M4.9 19.1C1 15.2 1 8.8 4.9 4.9m2.9 11.3c-2.3-2.3-2.3-6.1 "
       "0-8.5\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M16.2 7.8c2.3 "
       "2.3 2.3 6.1 0 8.5m2.9-11.4C23 8.8 23 15.1 19.1 19\"/></svg>LoRa</a>");
+  html += F("<a class=\"nav-item\" data-page=\"mqtt\" href=\"#/mqtt\" "
+            "onclick=\"navigateTo('mqtt');return false;\"><svg fill=\"none\" "
+            "stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 "
+            "24\"><path d=\"M12 2L2 7l10 5 10-5-10-5z\"/><path d=\"M2 17l10 5 "
+            "10-5M2 12l10 5 10-5\"/></svg>MQTT</a>");
   html +=
       F("<a class=\"nav-item\" data-page=\"encryption\" href=\"#/encryption\" "
         "onclick=\"navigateTo('encryption');return false;\"><svg fill=\"none\" "
@@ -263,11 +268,6 @@ void handleRoot() {
             "viewBox=\"0 0 24 24\"><rect width=\"16\" height=\"16\" x=\"4\" "
             "y=\"4\" rx=\"2\"/><path d=\"M9 9h6v6H9zm0-7v2m6-2v2M9 "
             "20v2m6-2v2M2 9h2m-2 6h2m16-6h2m-2 6h2\"/></svg>Hardware</a>");
-  html += F("<a class=\"nav-item\" data-page=\"mqtt\" href=\"#/mqtt\" "
-            "onclick=\"navigateTo('mqtt');return false;\"><svg fill=\"none\" "
-            "stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 "
-            "24\"><path d=\"M12 2L2 7l10 5 10-5-10-5z\"/><path d=\"M2 17l10 5 "
-            "10-5M2 12l10 5 10-5\"/></svg>MQTT</a>");
   html += F("</nav><nav class=\"nav-section\"><div "
             "class=\"nav-label\">Actions</div>");
   html += F(
