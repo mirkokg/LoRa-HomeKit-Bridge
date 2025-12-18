@@ -35,6 +35,13 @@ bool auth_enabled = false;
 char auth_username[AUTH_USERNAME_MAX_LEN] = "";
 uint8_t auth_password_hash[AUTH_PASSWORD_HASH_LEN] = {0};
 
+// MQTT settings
+bool mqtt_enabled = false;
+char mqtt_server[64] = "";
+uint16_t mqtt_port = 1883;
+char mqtt_username[32] = "";
+char mqtt_password[64] = "";
+
 // ============== Helper Functions ==============
 void toBase36(uint64_t num, char* out, int len) {
     const char* chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -133,6 +140,15 @@ void loadSettings() {
         prefs.getBytes("auth_hash", auth_password_hash, AUTH_PASSWORD_HASH_LEN);
     }
 
+    // MQTT settings
+    mqtt_enabled = prefs.getBool("mqtt_en", false);
+    if (mqtt_enabled) {
+        prefs.getString("mqtt_srv", mqtt_server, sizeof(mqtt_server));
+        mqtt_port = prefs.getUShort("mqtt_port", 1883);
+        prefs.getString("mqtt_user", mqtt_username, sizeof(mqtt_username));
+        prefs.getString("mqtt_pass", mqtt_password, sizeof(mqtt_password));
+    }
+
     prefs.end();
 
     // Generate pairing code on first boot
@@ -180,6 +196,24 @@ void saveSettings() {
         prefs.remove("auth_hash");
         auth_username[0] = '\0';
         memset(auth_password_hash, 0, AUTH_PASSWORD_HASH_LEN);
+    }
+    // MQTT settings
+    prefs.putBool("mqtt_en", mqtt_enabled);
+    if (mqtt_enabled) {
+        prefs.putString("mqtt_srv", mqtt_server);
+        prefs.putUShort("mqtt_port", mqtt_port);
+        prefs.putString("mqtt_user", mqtt_username);
+        prefs.putString("mqtt_pass", mqtt_password);
+    } else {
+        // Clear credentials when disabled
+        prefs.remove("mqtt_srv");
+        prefs.remove("mqtt_port");
+        prefs.remove("mqtt_user");
+        prefs.remove("mqtt_pass");
+        mqtt_server[0] = '\0';
+        mqtt_port = 1883;
+        mqtt_username[0] = '\0';
+        mqtt_password[0] = '\0';
     }
     // Pairing code
     prefs.putString("hk_code", homekit_code);

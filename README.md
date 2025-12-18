@@ -437,6 +437,7 @@ Built with:
 - **LoRa** by Sandeep Mistry
 - **ArduinoJson** by Benoit Blanchon
 - **SSD1306 Driver** by ThingPulse
+- **PubSubClient** by Nick O'Leary
 
 ---
 

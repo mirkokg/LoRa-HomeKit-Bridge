@@ -9,6 +9,7 @@
  *   - HomeSpan by Gregg Silverstein
  *   - LoRa by Sandeep Mistry
  *   - ArduinoJson by Benoit Blanchon
+ *   - PubSubClient by Nick O'Leary
  *   - ESP8266 and ESP32 OLED driver for SSD1306 displays by ThingPulse
  *   - QRCode by Richard Moore
  *
@@ -27,6 +28,7 @@
 #include "network/WiFiModule.h"
 #include "homekit/DeviceManagement.h"
 #include "network/WebServerModule.h"
+#include "network/MQTTModule.h"
 
 // ============== Global Variables ==============
 // Boot time tracking (only variable defined in main sketch)
@@ -113,6 +115,13 @@ void setup() {
     setupWebServer();
     displayProgress("Web Server", "Ready!", 100);
 
+    // Initialize MQTT if enabled
+    if (mqtt_enabled && wifi_ok) {
+        Serial.println("[BOOT] Initializing MQTT...");
+        initMQTT();
+        connectMQTT();
+    }
+
     IPAddress ip = ap_mode ? WiFi.softAPIP() : WiFi.localIP();
     Serial.printf("[BOOT] Web UI: http://%s/\n", ip.toString().c_str());
 
@@ -154,6 +163,11 @@ void loop() {
 
     // Handle web requests
     webServer.handleClient();
+
+    // Handle MQTT (reconnect if needed)
+    if (mqtt_enabled && !ap_mode) {
+        loopMQTT();
+    }
 
     // Check OLED timeout
     checkOledTimeout();

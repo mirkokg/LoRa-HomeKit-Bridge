@@ -10,6 +10,7 @@
 #include "hardware/Display.h"
 #include "core/Config.h"
 #include "network/WebServerModule.h"
+#include "network/MQTTModule.h"
 
 // ============== Mode Flags ==============
 bool homekit_started = false;
@@ -182,6 +183,11 @@ Device* registerDevice(const char* id, JsonDocument& doc) {
     // Save to flash
     saveDevices();
 
+    // Publish Home Assistant auto-discovery if MQTT enabled
+    if (mqtt_enabled) {
+        publishHomeAssistantDiscovery(dev, id);
+    }
+
     return dev;
 }
 
@@ -320,4 +326,9 @@ void updateDevice(Device* dev, JsonDocument& doc, int rssi) {
     String jsonStr;
     serializeJson(doc, jsonStr);
     logActivity(dev->name, jsonStr.c_str());
+
+    // Publish to MQTT if enabled
+    if (mqtt_enabled) {
+        publishDeviceData(dev, doc, rssi);
+    }
 }

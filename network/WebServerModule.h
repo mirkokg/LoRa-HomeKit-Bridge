@@ -36,6 +36,8 @@ void handleHardwareSettings();
 void handleClearActivity();
 void handleRemoveActivity();
 void handleAuthSettings();
+void handleMQTTSettings();
+void handleMQTTTest();
 void handleNotFound();
 
 #endif // WEBSERVER_MODULE_H

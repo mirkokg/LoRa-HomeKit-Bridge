@@ -42,6 +42,13 @@ extern bool auth_enabled;
 extern char auth_username[AUTH_USERNAME_MAX_LEN];
 extern uint8_t auth_password_hash[AUTH_PASSWORD_HASH_LEN];
 
+// MQTT Settings
+extern bool mqtt_enabled;
+extern char mqtt_server[64];
+extern uint16_t mqtt_port;
+extern char mqtt_username[32];
+extern char mqtt_password[64];
+
 // ============== Settings Functions ==============
 void toBase36(uint64_t num, char* out, int len);
 void generatePairingCode();
