@@ -1974,6 +1974,11 @@ void handleMQTTTest() {
   String testUsername = webServer.arg("username");
   String testPassword = webServer.arg("password");
 
+  // Use saved password if not provided (for "unchanged" case)
+  if (testPassword.length() == 0 && strlen(mqtt_password) > 0) {
+    testPassword = String(mqtt_password);
+  }
+
   if (testServer.length() == 0 || testPort == 0) {
     doc["success"] = false;
     doc["message"] = "Invalid server or port";
