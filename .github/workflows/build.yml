@@ -1,0 +1,59 @@
+name: Build Arduino Firmware
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install ESP32 platform
+      run: |
+        arduino-cli config init
+        arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+        arduino-cli core update-index
+        arduino-cli core install esp32:esp32@3.1.0
+
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "HomeSpan@2.0.0"
+        arduino-cli lib install "LoRa@0.8.0"
+        arduino-cli lib install "ArduinoJson@6.21.5"
+        arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays@4.6.0"
+        arduino-cli lib install "QRCode@0.0.1"
+        arduino-cli lib install "PubSubClient@2.8.0"
+
+    - name: Create QRCode library compatibility header
+      run: |
+        echo '#include "qrcode.h"' > ~/Arduino/libraries/QRCode/src/QRCode_Library.h
+
+    - name: Compile firmware
+      run: |
+        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80 \
+          --output-dir ./build \
+          LoRa-HomeKit-Bridge.ino
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware
+        path: |
+          build/*.bin
+          build/*.elf
+        retention-days: 30
+
+    - name: Display build info
+      run: |
+        echo "Build completed successfully!"
+        ls -lh build/
