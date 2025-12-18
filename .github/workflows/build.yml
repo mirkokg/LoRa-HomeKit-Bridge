@@ -40,7 +40,7 @@ jobs:
 
     - name: Compile firmware
       run: |
-        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80 \
+        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=min_spiffs,FlashMode=qio,FlashFreq=80 \
           --output-dir ./build \
           LoRa-HomeKit-Bridge.ino
 

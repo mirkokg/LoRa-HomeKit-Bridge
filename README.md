@@ -116,7 +116,7 @@ Open **Sketch** → **Include Library** → **Manage Libraries** and install:
 | Setting | Value |
 |---------|-------|
 | Flash Size | 4MB (32Mb) |
-| Partition Scheme | Huge APP (3MB No OTA/1MB SPIFFS) |
+| Partition Scheme | Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS) |
 | Flash Mode | QIO |
 | Flash Frequency | 80MHz |
 | Upload Speed | 115200 |

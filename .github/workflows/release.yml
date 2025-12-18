@@ -55,7 +55,7 @@ jobs:
 
     - name: Compile firmware
       run: |
-        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=huge_app,FlashMode=qio,FlashFreq=80 \
+        arduino-cli compile --fqbn esp32:esp32:esp32:FlashSize=4M,PartitionScheme=min_spiffs,FlashMode=qio,FlashFreq=80 \
           --output-dir ./build \
           LoRa-HomeKit-Bridge.ino
 
@@ -94,7 +94,7 @@ jobs:
         **Option B: Using Arduino IDE**
         - Tools → Board → ESP32 Dev Module
         - Tools → Flash Size → 4MB
-        - Tools → Partition Scheme → Huge APP (3MB No OTA/1MB SPIFFS)
+        - Tools → Partition Scheme → Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS)
         - Sketch → Upload Compiled Binary → Select the .bin file
 
         **Option C: Using ESP Flash Download Tool**
