@@ -1925,8 +1925,8 @@ void handleMQTTSettings() {
       }
       if (webServer.hasArg("mqtt_password") &&
           webServer.arg("mqtt_password").length() > 0) {
-        strncpy(mqtt_password, webServer.arg("mqtt_password").c_str(), 63);
-        mqtt_password[63] = 0;
+        strncpy(mqtt_password, webServer.arg("mqtt_password").c_str(), 127);
+        mqtt_password[127] = 0;
       }
 
       // Validate required fields
