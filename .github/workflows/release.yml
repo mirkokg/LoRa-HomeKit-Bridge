@@ -85,7 +85,7 @@ jobs:
 
         **Option A: Using esptool.py**
         ```bash
-        esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 \
+        esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 115200 \
           --before default_reset --after hard_reset write_flash \
           -z --flash_mode qio --flash_freq 80m --flash_size 4MB \
           0x10000 LoRa-HomeKit-Bridge-${{ steps.version.outputs.VERSION }}.bin

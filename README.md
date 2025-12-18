@@ -119,7 +119,7 @@ Open **Sketch** → **Include Library** → **Manage Libraries** and install:
 | Partition Scheme | Huge APP (3MB No OTA/1MB SPIFFS) |
 | Flash Mode | QIO |
 | Flash Frequency | 80MHz |
-| Upload Speed | 921600 |
+| Upload Speed | 115200 |
 
 ### Step 5: Flash the Firmware
 
