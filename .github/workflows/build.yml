@@ -27,12 +27,12 @@ jobs:
 
     - name: Install required libraries
       run: |
-        arduino-cli lib install "HomeSpan@2.0.0"
-        arduino-cli lib install "LoRa@0.8.0"
-        arduino-cli lib install "ArduinoJson@6.21.5"
-        arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays@4.6.0"
-        arduino-cli lib install "QRCode@0.0.1"
-        arduino-cli lib install "PubSubClient@2.8.0"
+        arduino-cli lib install "HomeSpan"
+        arduino-cli lib install "LoRa"
+        arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays"
+        arduino-cli lib install "QRCode"
+        arduino-cli lib install "PubSubClient"
 
     - name: Create QRCode library compatibility header
       run: |
