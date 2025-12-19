@@ -211,6 +211,29 @@ void loop() {
         }
     }
 
+    // Detect HomeKit pairing status changes and publish diagnostics
+    static bool lastPairingStatus = false;
+    static bool pairingStatusInitialized = false;
+    if (mqtt_enabled && !ap_mode && isMQTTConnected() && homekit_started) {
+        bool currentPairingStatus = (homeSpan.controllerListBegin() != homeSpan.controllerListEnd());
+
+        if (!pairingStatusInitialized) {
+            // First check after boot - just initialize the status
+            lastPairingStatus = currentPairingStatus;
+            pairingStatusInitialized = true;
+            // Publish diagnostics with correct initial status
+            publishBridgeDiagnosticsIfChanged();
+        } else if (currentPairingStatus != lastPairingStatus) {
+            // Pairing status changed!
+            Serial.printf("[HOMEKIT] Pairing status changed: %s -> %s\n",
+                         lastPairingStatus ? "paired" : "unpaired",
+                         currentPairingStatus ? "paired" : "unpaired");
+            lastPairingStatus = currentPairingStatus;
+            // Publish diagnostics immediately (bypassing rate limit for this important change)
+            publishBridgeDiagnostics();
+        }
+    }
+
     // Enforce LED off state when activity LED is disabled
     // Only enforce when activity LED is off - power LED just controls HomeSpan status
     static unsigned long lastDebug = 0;

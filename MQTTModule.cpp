@@ -150,10 +150,9 @@ void connectMQTT() {
       }
     }
 
-    // Delay initial diagnostics to allow HomeSpan to load pairing info from flash
-    delay(2000);
-
     // Publish initial bridge diagnostics
+    // Note: HomeKit pairing status may not be accurate yet if HomeSpan is still loading
+    // The main loop will detect pairing status changes and republish
     publishBridgeDiagnostics();
   } else {
     Serial.printf(" Failed, rc=%d\n", mqttClient.state());
@@ -445,7 +444,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("sensor/" + uniquePrefix + "/temperature/config");
     String payload =
         "{\"name\":\"Temperature\",\"unique_id\":\"" + uniquePrefix +
-        "_temp\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/temperature/state") +
+        "_temp\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/temperature") +
         "\",\"unit_of_measurement\":\"°C\",\"device_class\":\"temperature\"," +
         "\"state_class\":\"measurement\"," +
         availability + "," + deviceInfo + "}";
@@ -460,7 +459,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("sensor/" + uniquePrefix + "/humidity/config");
     String payload =
         "{\"name\":\"Humidity\",\"unique_id\":\"" + uniquePrefix +
-        "_hum\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/humidity/state") +
+        "_hum\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/humidity") +
         "\",\"unit_of_measurement\":\"%\",\"device_class\":\"humidity\"," +
         "\"state_class\":\"measurement\"," +
         availability + "," + deviceInfo + "}";
@@ -475,7 +474,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("sensor/" + uniquePrefix + "/battery/config");
     String payload =
         "{\"name\":\"Battery\",\"unique_id\":\"" + uniquePrefix +
-        "_batt\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/battery/state") +
+        "_batt\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/battery") +
         "\",\"unit_of_measurement\":\"%\",\"device_class\":\"battery\"," +
         "\"state_class\":\"measurement\"," +
         "\"entity_category\":\"diagnostic\"," +
@@ -491,7 +490,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("sensor/" + uniquePrefix + "/lux/config");
     String payload =
         "{\"name\":\"Illuminance\",\"unique_id\":\"" + uniquePrefix +
-        "_lux\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/lux/state") +
+        "_lux\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/lux") +
         "\",\"unit_of_measurement\":\"lx\",\"device_class\":\"illuminance\"," +
         "\"state_class\":\"measurement\"," +
         availability + "," + deviceInfo + "}";
@@ -506,7 +505,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion/config");
     String payload =
         "{\"name\":\"Motion\",\"unique_id\":\"" + uniquePrefix +
-        "_motion\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/motion/state") +
+        "_motion\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/motion") +
         "\",\"device_class\":\"motion\",\"payload_on\":\"on\",\"payload_off\":\"off\"," +
         availability + "," + deviceInfo + "}";
 
@@ -521,7 +520,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
     String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact/config");
     String payload =
         "{\"name\":\"Contact\",\"unique_id\":\"" + uniquePrefix +
-        "_contact\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/contact/state") +
+        "_contact\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/contact") +
         "\",\"device_class\":\"" + sensorType +
         "\",\"payload_on\":\"on\",\"payload_off\":\"off\"," +
         availability + "," + deviceInfo + "}";
@@ -534,7 +533,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
   // RSSI diagnostic sensor
   String rssiTopic = buildTopic("sensor/" + uniquePrefix + "/rssi/config");
   String rssiPayload = "{\"name\":\"RSSI\",\"unique_id\":\"" + uniquePrefix +
-                       "_rssi\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/rssi/state") +
+                       "_rssi\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/rssi") +
                        "\",\"unit_of_measurement\":\"dBm\",\"device_class\":\"signal_strength\"," +
                        "\"state_class\":\"measurement\"," +
                        "\"entity_category\":\"diagnostic\"," +
@@ -563,7 +562,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish temperature
   if (doc.containsKey("t") && dev->has_temp) {
-    String topic = buildTopic("sensor/" + uniquePrefix + "/temperature/state");
+    String topic = buildTopic("sensor/" + uniquePrefix + "/temperature");
     String value = String(doc["t"].as<float>(), 1);
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish temperature\n");
@@ -572,7 +571,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish humidity
   if (doc.containsKey("hu") && dev->has_hum) {
-    String topic = buildTopic("sensor/" + uniquePrefix + "/humidity/state");
+    String topic = buildTopic("sensor/" + uniquePrefix + "/humidity");
     String value = String(doc["hu"].as<float>(), 0);
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish humidity\n");
@@ -581,7 +580,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish battery
   if (doc.containsKey("b") && dev->has_batt) {
-    String topic = buildTopic("sensor/" + uniquePrefix + "/battery/state");
+    String topic = buildTopic("sensor/" + uniquePrefix + "/battery");
     String value = String(doc["b"].as<int>());
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish battery\n");
@@ -590,7 +589,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish light/lux
   if (doc.containsKey("lux") && dev->has_light) {
-    String topic = buildTopic("sensor/" + uniquePrefix + "/lux/state");
+    String topic = buildTopic("sensor/" + uniquePrefix + "/lux");
     String value = String(doc["lux"].as<int>());
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish lux\n");
@@ -599,7 +598,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish motion (binary sensor)
   if (doc.containsKey("m") && dev->has_motion) {
-    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion/state");
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion");
     String value = doc["m"].as<bool>() ? "on" : "off";
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish motion\n");
@@ -608,7 +607,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish contact (binary sensor)
   if (doc.containsKey("c") && dev->has_contact) {
-    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact/state");
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact");
     String value = doc["c"].as<bool>() ? "on" : "off";
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish contact\n");
@@ -616,7 +615,7 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
   }
 
   // Publish RSSI
-  String rssiTopic = buildTopic("sensor/" + uniquePrefix + "/rssi/state");
+  String rssiTopic = buildTopic("sensor/" + uniquePrefix + "/rssi");
   String rssiValue = String(rssi);
   if (!mqttClient.publish(rssiTopic.c_str(), rssiValue.c_str(), mqtt_retain)) {
     Serial.printf("[MQTT] Failed to publish RSSI\n");
