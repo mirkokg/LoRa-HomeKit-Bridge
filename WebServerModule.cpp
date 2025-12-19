@@ -968,6 +968,11 @@ void handleRoot() {
   html += F("<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\"/>");
   html += F(
       "<path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg>Authentication</h3></div>");
+  if (!auth_enabled) {
+    html += F("<div class=\"form-hint warning\" "
+              "style=\"margin-top:12px;color:#f59e0b\">");
+    html += F("⚠️ Warning: Interface is unprotected!</div>");
+  }
   html += F("<div class=\"toggle-group\"><div class=\"toggle-info\">");
   html += F("<span class=\"toggle-title\">Enable Authentication</span>");
   html += F("<span class=\"toggle-desc\">Protect web interface with "
@@ -976,11 +981,6 @@ void handleRoot() {
   if (auth_enabled)
     html += F(" active");
   html += F("\" id=\"authEnabled\" onclick=\"toggleAuth()\"></div></div>");
-  if (!auth_enabled) {
-    html += F("<div class=\"form-hint warning\" "
-              "style=\"margin-top:12px;color:#f59e0b\">");
-    html += F("⚠️ Warning: Interface is unprotected!</div>");
-  }
   html += F("<div id=\"authForm\" style=\"");
   if (!auth_enabled)
     html += F("display:none;");
