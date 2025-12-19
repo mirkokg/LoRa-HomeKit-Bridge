@@ -13,6 +13,10 @@ DNSServer dnsServer;
 // ============== Mode Flags ==============
 bool ap_mode = false;
 
+// ============== WiFi Reconnection ==============
+unsigned long lastWiFiReconnect = 0;
+#define WIFI_RECONNECT_INTERVAL 30000  // Try to reconnect every 30 seconds
+
 // ============== WiFi Functions ==============
 bool connectWiFi() {
     if (strlen(wifi_ssid) == 0) {
@@ -72,4 +76,52 @@ void startAPMode() {
     Serial.printf("[AP] IP: %s\n", WiFi.softAPIP().toString().c_str());
 
     delay(500);
+}
+
+bool attemptWiFiReconnect() {
+    // Only attempt reconnection if:
+    // 1. We're in AP mode
+    // 2. WiFi is configured
+    // 3. Enough time has passed since last attempt
+    if (!ap_mode || strlen(wifi_ssid) == 0) {
+        return false;
+    }
+
+    unsigned long now = millis();
+    if (now - lastWiFiReconnect < WIFI_RECONNECT_INTERVAL) {
+        return false;
+    }
+
+    lastWiFiReconnect = now;
+
+    Serial.println("[WIFI] Attempting reconnection...");
+
+    // Try to connect to WiFi (shorter timeout than initial connection)
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_ssid, wifi_password);
+
+    int timeout = 20; // 10 seconds (20 * 500ms)
+    while (WiFi.status() != WL_CONNECTED && timeout-- > 0) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.printf("[WIFI] Reconnected: %s\n", WiFi.localIP().toString().c_str());
+
+        // Stop AP mode
+        dnsServer.stop();
+        ap_mode = false;
+
+        return true;
+    }
+
+    // Reconnection failed, restart AP mode
+    Serial.println("[WIFI] Reconnection failed, resuming AP mode...");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(AP_SSID, AP_PASSWORD);
+    dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+
+    return false;
 }

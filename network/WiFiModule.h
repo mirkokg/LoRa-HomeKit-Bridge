@@ -19,5 +19,6 @@ extern bool ap_mode;
 // ============== WiFi Functions ==============
 bool connectWiFi();
 void startAPMode();
+bool attemptWiFiReconnect();
 
 #endif // WIFI_MODULE_H

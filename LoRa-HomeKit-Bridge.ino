@@ -151,6 +151,27 @@ void loop() {
     // Handle DNS for captive portal in AP mode
     if (ap_mode) {
         dnsServer.processNextRequest();
+
+        // Try to reconnect to WiFi if configured
+        if (wifi_configured && attemptWiFiReconnect()) {
+            // WiFi reconnected successfully!
+            Serial.println("[WIFI] WiFi reconnected, initializing HomeKit and MQTT...");
+
+            // Setup HomeKit
+            if (!homekit_started) {
+                Serial.println("[BOOT] Setting up HomeKit...");
+                setupHomeKit();
+            }
+
+            // Initialize MQTT if enabled
+            if (mqtt_enabled) {
+                Serial.println("[BOOT] Initializing MQTT...");
+                initMQTT();
+                connectMQTT();
+            }
+
+            Serial.printf("[WIFI] Ready! IP: %s\n", WiFi.localIP().toString().c_str());
+        }
     }
 
     // Process LoRa packets
