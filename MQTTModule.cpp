@@ -357,7 +357,7 @@ void publishGatewayDiscovery() {
   String pairedPayload = "{\"name\":\"HomeKit Paired\",\"unique_id\":\"" + uniqueId +
                          "_paired\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
                          "\",\"payload_on\":\"true\",\"payload_off\":\"false\"," +
-                         "\"value_template\":\"{{ value_json.homekit.paired }}\"," +
+                         "\"value_template\":\"{{ value_json.homekit.paired | string | lower }}\"," +
                          "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
   mqttClient.publish(pairedTopic.c_str(), pairedPayload.c_str(), mqtt_retain);
 
@@ -388,10 +388,11 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
   String availabilityTopic = buildTopic("sensor/" + uniquePrefix + "/availability");
 
   // Device info JSON - shared across all sensors
+  // Use via_device to show sensors under the gateway device in Home Assistant
   String deviceInfo =
       String("\"device\":{\"identifiers\":[\"") + deviceId + "\"],\"name\":\"" +
       String(dev->name) +
-      "\",\"manufacturer\":\"LoRa Sensor\",\"model\":\"LoRa-v1\",\"via_device\":\"" +
+      "\",\"manufacturer\":\"LoRa Sensor\",\"model\":\"LoRa-v1\",\"via_device\":\"lora_gateway_" +
       gatewayMac + "\"}";
 
   // Availability JSON - shared across all entities
