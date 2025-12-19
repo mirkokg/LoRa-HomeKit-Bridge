@@ -131,8 +131,20 @@ void connectMQTT() {
     // String commandTopic = buildTopic("bridge/" + getGatewayMac() + "/set");
     // mqttClient.subscribe(commandTopic.c_str(), mqtt_qos);
 
-    // Publish Home Assistant auto-discovery for gateway
+    // IMPORTANT: Publish gateway discovery FIRST before device discoveries
+    // This is critical for Home Assistant to show devices under "Connected devices"
     publishGatewayDiscovery();
+
+    // Republish discovery for all existing devices (order matters!)
+    // This ensures devices loaded from flash are properly linked to the gateway
+    extern Device devices[];
+    extern int device_count;
+    for (int i = 0; i < device_count; i++) {
+      if (devices[i].active) {
+        publishHomeAssistantDiscovery(&devices[i], devices[i].id);
+        delay(100);  // Small delay between discoveries to avoid overwhelming MQTT
+      }
+    }
 
     // Publish bridge diagnostics
     publishBridgeDiagnostics();
