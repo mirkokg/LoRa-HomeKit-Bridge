@@ -918,6 +918,31 @@ void handleRoot() {
   else
     html += F("Leave empty if not required");
   html += F("\"></div></div>");
+  html += F("<div class=\"form-group\"><label class=\"form-label\">Topic "
+            "Prefix</label><input type=\"text\" class=\"form-input\" "
+            "id=\"mqtt_topic_prefix\" name=\"mqtt_topic_prefix\" value=\"");
+  html += mqtt_topic_prefix;
+  html += F("\" placeholder=\"homeassistant\"></div>");
+  html += F("<div class=\"grid-2\"><div class=\"form-group\"><label "
+            "class=\"form-label\">QoS Level</label><select class=\"form-input\" "
+            "id=\"mqtt_qos\" name=\"mqtt_qos\">");
+  html += F("<option value=\"0\"");
+  if (mqtt_qos == 0) html += F(" selected");
+  html += F(">0 - At most once</option>");
+  html += F("<option value=\"1\"");
+  if (mqtt_qos == 1) html += F(" selected");
+  html += F(">1 - At least once</option>");
+  html += F("</select></div>");
+  html += F("<div class=\"form-group\"><div style=\"display:flex;gap:16px;margin-top:28px\">");
+  html += F("<label style=\"display:flex;align-items:center;gap:6px;font-size:12px;\">");
+  html += F("<input type=\"checkbox\" id=\"mqtt_ssl\" name=\"mqtt_ssl\" value=\"1\"");
+  if (mqtt_ssl_enabled) html += F(" checked");
+  html += F("> Enable SSL/TLS</label>");
+  html += F("<label style=\"display:flex;align-items:center;gap:6px;font-size:12px;\">");
+  html += F("<input type=\"checkbox\" id=\"mqtt_retain\" name=\"mqtt_retain\" value=\"1\"");
+  if (mqtt_retain) html += F(" checked");
+  html += F("> Retain Messages</label>");
+  html += F("</div></div></div>");
   html += F("<p class=\"form-hint\">Home Assistant auto-discovery will be "
             "enabled automatically</p>");
   html += F("<div class=\"btn-group\" "
@@ -1946,6 +1971,16 @@ void handleMQTTSettings() {
         strncpy(mqtt_password, webServer.arg("mqtt_password").c_str(), 127);
         mqtt_password[127] = 0;
       }
+      if (webServer.hasArg("mqtt_topic_prefix")) {
+        strncpy(mqtt_topic_prefix, webServer.arg("mqtt_topic_prefix").c_str(), 31);
+        mqtt_topic_prefix[31] = 0;
+      }
+      if (webServer.hasArg("mqtt_qos")) {
+        mqtt_qos = webServer.arg("mqtt_qos").toInt();
+        if (mqtt_qos > 2) mqtt_qos = 0; // Clamp to valid range
+      }
+      mqtt_ssl_enabled = webServer.hasArg("mqtt_ssl");
+      mqtt_retain = webServer.hasArg("mqtt_retain");
 
       // Validate required fields
       if (strlen(mqtt_server) == 0) {
@@ -1958,12 +1993,22 @@ void handleMQTTSettings() {
 
       mqtt_enabled = true;
       saveSettings();
+
+      // Reinitialize MQTT with new settings
+      disconnectMQTT();
+      initMQTT();
+      connectMQTT();
+
       doc["success"] = true;
       doc["message"] = "MQTT enabled and configured";
       Serial.println("[MQTT] Settings saved and enabled");
     } else {
       mqtt_enabled = false;
       saveSettings();
+
+      // Disconnect MQTT
+      disconnectMQTT();
+
       doc["success"] = true;
       doc["message"] = "MQTT disabled";
       Serial.println("[MQTT] Disabled");

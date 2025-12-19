@@ -207,6 +207,11 @@ bool removeDevice(const char* id) {
                 }
             }
 
+            // Remove from MQTT (Home Assistant)
+            if (mqtt_enabled) {
+                removeDeviceFromMQTT(id);
+            }
+
             // Clear device pointers
             devices[i].active = false;
             devices[i].aid = 0;

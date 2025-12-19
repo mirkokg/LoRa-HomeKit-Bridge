@@ -41,6 +41,10 @@ char mqtt_server[64] = "";
 uint16_t mqtt_port = 1883;
 char mqtt_username[32] = "";
 char mqtt_password[128] = "";
+char mqtt_topic_prefix[32] = "homeassistant";
+uint8_t mqtt_qos = 0;
+bool mqtt_ssl_enabled = false;
+bool mqtt_retain = true;
 
 // ============== Helper Functions ==============
 void toBase36(uint64_t num, char *out, int len) {
@@ -150,6 +154,10 @@ void loadSettings() {
     mqtt_port = prefs.getUShort("mqtt_port", 1883);
     prefs.getString("mqtt_user", mqtt_username, sizeof(mqtt_username));
     prefs.getString("mqtt_pass", mqtt_password, sizeof(mqtt_password));
+    prefs.getString("mqtt_pre", mqtt_topic_prefix, sizeof(mqtt_topic_prefix));
+    mqtt_qos = prefs.getUChar("mqtt_qos", 0);
+    mqtt_ssl_enabled = prefs.getBool("mqtt_ssl", false);
+    mqtt_retain = prefs.getBool("mqtt_ret", true);
   }
 
   prefs.end();
@@ -209,16 +217,28 @@ void saveSettings() {
     prefs.putUShort("mqtt_port", mqtt_port);
     prefs.putString("mqtt_user", mqtt_username);
     prefs.putString("mqtt_pass", mqtt_password);
+    prefs.putString("mqtt_pre", mqtt_topic_prefix);
+    prefs.putUChar("mqtt_qos", mqtt_qos);
+    prefs.putBool("mqtt_ssl", mqtt_ssl_enabled);
+    prefs.putBool("mqtt_ret", mqtt_retain);
   } else {
     // Clear credentials when disabled
     prefs.remove("mqtt_srv");
     prefs.remove("mqtt_port");
     prefs.remove("mqtt_user");
     prefs.remove("mqtt_pass");
+    prefs.remove("mqtt_pre");
+    prefs.remove("mqtt_qos");
+    prefs.remove("mqtt_ssl");
+    prefs.remove("mqtt_ret");
     mqtt_server[0] = '\0';
     mqtt_port = 1883;
     mqtt_username[0] = '\0';
     mqtt_password[0] = '\0';
+    strncpy(mqtt_topic_prefix, "homeassistant", sizeof(mqtt_topic_prefix));
+    mqtt_qos = 0;
+    mqtt_ssl_enabled = false;
+    mqtt_retain = true;
   }
   // Pairing code
   prefs.putString("hk_code", homekit_code);

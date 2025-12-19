@@ -48,6 +48,10 @@ extern char mqtt_server[64];
 extern uint16_t mqtt_port;
 extern char mqtt_username[32];
 extern char mqtt_password[128];
+extern char mqtt_topic_prefix[32];
+extern uint8_t mqtt_qos;
+extern bool mqtt_ssl_enabled;
+extern bool mqtt_retain;
 
 // ============== Settings Functions ==============
 void toBase36(uint64_t num, char *out, int len);

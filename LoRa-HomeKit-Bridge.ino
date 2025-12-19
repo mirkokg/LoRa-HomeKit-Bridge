@@ -202,6 +202,15 @@ void loop() {
         lastDisplayUpdate = millis();
     }
 
+    // Publish MQTT diagnostics periodically (every 5 minutes)
+    static unsigned long lastDiagnosticsPublish = 0;
+    if (mqtt_enabled && !ap_mode && isMQTTConnected()) {
+        if (millis() - lastDiagnosticsPublish > 300000) {
+            publishBridgeDiagnostics();
+            lastDiagnosticsPublish = millis();
+        }
+    }
+
     // Enforce LED off state when activity LED is disabled
     // Only enforce when activity LED is off - power LED just controls HomeSpan status
     static unsigned long lastDebug = 0;

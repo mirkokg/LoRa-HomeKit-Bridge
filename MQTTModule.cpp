@@ -5,22 +5,76 @@
 #include "network/MQTTModule.h"
 #include "data/Settings.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 
 // Global objects
 WiFiClient mqttWifiClient;
-PubSubClient mqttClient(mqttWifiClient);
+WiFiClientSecure mqttSecureClient;
+PubSubClient mqttClient;
 unsigned long lastMqttReconnect = 0;
 
-#define MQTT_RETAIN true
 #define MQTT_RECONNECT_INTERVAL 5000
+#define MQTT_BUFFER_SIZE 1024
+
+// Topics
+String bridgeStatusTopic;
+String bridgeLwtTopic;
+
+// Helper to get gateway MAC without colons
+String getGatewayMac() {
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  mac.toLowerCase();
+  return mac;
+}
+
+// Helper to build topic with prefix
+String buildTopic(String topic) {
+  return String(mqtt_topic_prefix) + "/" + topic;
+}
+
+// MQTT callback for incoming messages
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String topicStr = String(topic);
+  String payloadStr;
+
+  for (unsigned int i = 0; i < length; i++) {
+    payloadStr += (char)payload[i];
+  }
+
+  Serial.printf("[MQTT] Message received on %s: %s\n", topic, payloadStr.c_str());
+
+  // Handle subscribed topics here
+  // Example: if (topicStr.endsWith("/set")) { ... }
+}
 
 // Initialize MQTT client
 void initMQTT() {
-  if (mqtt_enabled && strlen(mqtt_server) > 0) {
-    mqttClient.setServer(mqtt_server, mqtt_port);
-    mqttClient.setBufferSize(1024); // Increase buffer for discovery payloads
-    Serial.printf("[MQTT] Configured for %s:%d\n", mqtt_server, mqtt_port);
+  if (!mqtt_enabled || strlen(mqtt_server) == 0) {
+    return;
   }
+
+  // Set up client based on SSL/TLS setting
+  if (mqtt_ssl_enabled) {
+    mqttSecureClient.setInsecure(); // Accept all certificates (for simplicity)
+    mqttClient.setClient(mqttSecureClient);
+  } else {
+    mqttClient.setClient(mqttWifiClient);
+  }
+
+  mqttClient.setServer(mqtt_server, mqtt_port);
+  mqttClient.setBufferSize(MQTT_BUFFER_SIZE);
+  mqttClient.setCallback(mqttCallback);
+
+  // Build topic strings
+  String gatewayMac = getGatewayMac();
+  bridgeStatusTopic = buildTopic("bridge/" + gatewayMac + "/status");
+  bridgeLwtTopic = bridgeStatusTopic;
+
+  Serial.printf("[MQTT] Configured for %s:%d (SSL: %s, QoS: %d)\n",
+                mqtt_server, mqtt_port,
+                mqtt_ssl_enabled ? "Yes" : "No",
+                mqtt_qos);
 }
 
 // Connect to MQTT broker
@@ -37,18 +91,52 @@ void connectMQTT() {
   clientId.replace(":", "");
 
   bool connected = false;
+
+  // Connect with LWT (Last Will and Testament)
   if (strlen(mqtt_username) > 0 && strlen(mqtt_password) > 0) {
-    connected =
-        mqttClient.connect(clientId.c_str(), mqtt_username, mqtt_password);
+    connected = mqttClient.connect(
+      clientId.c_str(),
+      mqtt_username,
+      mqtt_password,
+      bridgeLwtTopic.c_str(),  // LWT topic
+      mqtt_qos,                 // LWT QoS
+      mqtt_retain,              // LWT retain
+      "offline"                 // LWT message
+    );
   } else {
-    connected = mqttClient.connect(clientId.c_str());
+    connected = mqttClient.connect(
+      clientId.c_str(),
+      bridgeLwtTopic.c_str(),   // LWT topic
+      mqtt_qos,                 // LWT QoS
+      mqtt_retain,              // LWT retain
+      "offline"                 // LWT message
+    );
   }
 
   if (connected) {
     Serial.println(" Connected!");
     Serial.printf("[MQTT] Buffer size: %d bytes\n", mqttClient.getBufferSize());
+
+    // Publish online status
+    publishBridgeStatus(true);
+
+    // Subscribe to command topics if needed
+    // String commandTopic = buildTopic("bridge/" + getGatewayMac() + "/set");
+    // mqttClient.subscribe(commandTopic.c_str(), mqtt_qos);
+
+    // Publish bridge diagnostics
+    publishBridgeDiagnostics();
   } else {
     Serial.printf(" Failed, rc=%d\n", mqttClient.state());
+  }
+}
+
+// Disconnect from MQTT broker gracefully
+void disconnectMQTT() {
+  if (mqttClient.connected()) {
+    publishBridgeStatus(false);
+    mqttClient.disconnect();
+    Serial.println("[MQTT] Disconnected");
   }
 }
 
@@ -65,7 +153,6 @@ void reconnectMQTT() {
   }
 }
 
-// MQTT loop - call in main loop
 // Helper to check connection status
 bool isMQTTConnected() {
   if (!mqtt_enabled)
@@ -73,6 +160,7 @@ bool isMQTTConnected() {
   return mqttClient.connected();
 }
 
+// MQTT loop - call in main loop
 void loopMQTT() {
   if (!mqtt_enabled) {
     return;
@@ -111,12 +199,45 @@ bool testMQTTConnection(const char *server, uint16_t port, const char *username,
   return connected;
 }
 
-// Helper function to get gateway MAC without colons
-String getGatewayMac() {
-  String mac = WiFi.macAddress();
-  mac.replace(":", "");
-  mac.toLowerCase();
-  return mac;
+// Publish bridge online/offline status
+void publishBridgeStatus(bool online) {
+  if (!mqtt_enabled || !mqttClient.connected()) {
+    return;
+  }
+
+  const char* status = online ? "online" : "offline";
+  bool success = mqttClient.publish(bridgeStatusTopic.c_str(), status, mqtt_retain);
+
+  if (success) {
+    Serial.printf("[MQTT] Published bridge status: %s\n", status);
+  } else {
+    Serial.printf("[MQTT] Failed to publish bridge status\n");
+  }
+}
+
+// Publish bridge diagnostics (uptime, wifi signal, etc.)
+void publishBridgeDiagnostics() {
+  if (!mqtt_enabled || !mqttClient.connected()) {
+    return;
+  }
+
+  String gatewayMac = getGatewayMac();
+  String diagnosticTopic = buildTopic("bridge/" + gatewayMac + "/diagnostics");
+
+  // Build JSON payload with diagnostics
+  String payload = "{";
+  payload += "\"uptime\":" + String(millis() / 1000) + ",";
+  payload += "\"rssi\":" + String(WiFi.RSSI()) + ",";
+  payload += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
+  payload += "\"mac\":\"" + WiFi.macAddress() + "\",";
+  payload += "\"free_heap\":" + String(ESP.getFreeHeap());
+  payload += "}";
+
+  bool success = mqttClient.publish(diagnosticTopic.c_str(), payload.c_str(), mqtt_retain);
+
+  if (!success) {
+    Serial.println("[MQTT] Failed to publish diagnostics");
+  }
 }
 
 // Publish Home Assistant auto-discovery configuration for a device
@@ -130,101 +251,128 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId) {
 
   Serial.printf("[MQTT] Publishing auto-discovery for device: %s\n", deviceId);
 
+  // Availability topic (shared across all entities)
+  String availabilityTopic = buildTopic("sensor/" + uniquePrefix + "/availability");
+
   // Device info JSON - shared across all sensors
   String deviceInfo =
       String("\"device\":{\"identifiers\":[\"") + deviceId + "\"],\"name\":\"" +
       String(dev->name) +
-      "\",\"manufacturer\":\"LoRa Sensor\",\"model\":\"LoRa-v1\"}";
+      "\",\"manufacturer\":\"LoRa Sensor\",\"model\":\"LoRa-v1\",\"via_device\":\"" +
+      gatewayMac + "\"}";
+
+  // Availability JSON - shared across all entities
+  String availability = "\"availability\":{\"topic\":\"" + availabilityTopic +
+                       "\",\"payload_available\":\"online\",\"payload_not_available\":\"offline\"}";
 
   // Temperature sensor
   if (dev->has_temp) {
-    String topic =
-        "homeassistant/sensor/" + uniquePrefix + "/temperature/config";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/temperature/config");
     String payload =
         "{\"name\":\"Temperature\",\"unique_id\":\"" + uniquePrefix +
-        "_temp\",\"state_topic\":\"homeassistant/sensor/" + uniquePrefix +
-        "/temperature/"
-        "state\",\"unit_of_measurement\":\"°C\",\"device_class\":"
-        "\"temperature\"," +
-        deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_temp\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/temperature/state") +
+        "\",\"unit_of_measurement\":\"°C\",\"device_class\":\"temperature\"," +
+        "\"state_class\":\"measurement\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish temperature discovery\n");
+    }
   }
 
   // Humidity sensor
   if (dev->has_hum) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/humidity/config";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/humidity/config");
     String payload =
         "{\"name\":\"Humidity\",\"unique_id\":\"" + uniquePrefix +
-        "_hum\",\"state_topic\":\"homeassistant/sensor/" + uniquePrefix +
-        "/humidity/"
-        "state\",\"unit_of_measurement\":\"%\",\"device_class\":\"humidity\"," +
-        deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_hum\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/humidity/state") +
+        "\",\"unit_of_measurement\":\"%\",\"device_class\":\"humidity\"," +
+        "\"state_class\":\"measurement\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish humidity discovery\n");
+    }
   }
 
   // Battery sensor
   if (dev->has_batt) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/battery/config";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/battery/config");
     String payload =
         "{\"name\":\"Battery\",\"unique_id\":\"" + uniquePrefix +
-        "_batt\",\"state_topic\":\"homeassistant/sensor/" + uniquePrefix +
-        "/battery/"
-        "state\",\"unit_of_measurement\":\"%\",\"device_class\":\"battery\"," +
-        "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_batt\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/battery/state") +
+        "\",\"unit_of_measurement\":\"%\",\"device_class\":\"battery\"," +
+        "\"state_class\":\"measurement\"," +
+        "\"entity_category\":\"diagnostic\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish battery discovery\n");
+    }
   }
 
   // Light sensor
   if (dev->has_light) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/lux/config";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/lux/config");
     String payload =
         "{\"name\":\"Illuminance\",\"unique_id\":\"" + uniquePrefix +
-        "_lux\",\"state_topic\":\"homeassistant/sensor/" + uniquePrefix +
-        "/lux/"
-        "state\",\"unit_of_measurement\":\"lx\",\"device_class\":"
-        "\"illuminance\"," +
-        deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_lux\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/lux/state") +
+        "\",\"unit_of_measurement\":\"lx\",\"device_class\":\"illuminance\"," +
+        "\"state_class\":\"measurement\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish lux discovery\n");
+    }
   }
 
   // Motion sensor (binary sensor)
   if (dev->has_motion) {
-    String topic =
-        "homeassistant/binary_sensor/" + uniquePrefix + "/motion/config";
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion/config");
     String payload =
         "{\"name\":\"Motion\",\"unique_id\":\"" + uniquePrefix +
-        "_motion\",\"state_topic\":\"homeassistant/binary_sensor/" +
-        uniquePrefix +
-        "/motion/"
-        "state\",\"device_class\":\"motion\",\"payload_on\":\"on\",\"payload_"
-        "off\":\"off\"," +
-        deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_motion\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/motion/state") +
+        "\",\"device_class\":\"motion\",\"payload_on\":\"on\",\"payload_off\":\"off\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish motion discovery\n");
+    }
   }
 
   // Contact sensor (binary sensor)
   if (dev->has_contact) {
     String sensorType = (dev->contact_type == 1) ? "door" : "window";
-    String topic =
-        "homeassistant/binary_sensor/" + uniquePrefix + "/contact/config";
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact/config");
     String payload =
         "{\"name\":\"Contact\",\"unique_id\":\"" + uniquePrefix +
-        "_contact\",\"state_topic\":\"homeassistant/binary_sensor/" +
-        uniquePrefix + "/contact/state\",\"device_class\":\"" + sensorType +
-        "\",\"payload_on\":\"on\",\"payload_off\":\"off\"," + deviceInfo + "}";
-    mqttClient.publish(topic.c_str(), payload.c_str(), MQTT_RETAIN);
+        "_contact\",\"state_topic\":\"" + buildTopic("binary_sensor/" + uniquePrefix + "/contact/state") +
+        "\",\"device_class\":\"" + sensorType +
+        "\",\"payload_on\":\"on\",\"payload_off\":\"off\"," +
+        availability + "," + deviceInfo + "}";
+
+    if (!mqttClient.publish(topic.c_str(), payload.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish contact discovery\n");
+    }
   }
 
   // RSSI diagnostic sensor
-  String rssiTopic = "homeassistant/sensor/" + uniquePrefix + "/rssi/config";
+  String rssiTopic = buildTopic("sensor/" + uniquePrefix + "/rssi/config");
   String rssiPayload = "{\"name\":\"RSSI\",\"unique_id\":\"" + uniquePrefix +
-                       "_rssi\",\"state_topic\":\"homeassistant/sensor/" +
-                       uniquePrefix +
-                       "/rssi/"
-                       "state\",\"unit_of_measurement\":\"dBm\",\"device_"
-                       "class\":\"signal_strength\"," +
-                       "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
-  mqttClient.publish(rssiTopic.c_str(), rssiPayload.c_str(), MQTT_RETAIN);
+                       "_rssi\",\"state_topic\":\"" + buildTopic("sensor/" + uniquePrefix + "/rssi/state") +
+                       "\",\"unit_of_measurement\":\"dBm\",\"device_class\":\"signal_strength\"," +
+                       "\"state_class\":\"measurement\"," +
+                       "\"entity_category\":\"diagnostic\"," +
+                       availability + "," + deviceInfo + "}";
+
+  if (!mqttClient.publish(rssiTopic.c_str(), rssiPayload.c_str(), mqtt_retain)) {
+    Serial.printf("[MQTT] Failed to publish RSSI discovery\n");
+  }
+
+  // Publish initial availability as online
+  if (!mqttClient.publish(availabilityTopic.c_str(), "online", mqtt_retain)) {
+    Serial.printf("[MQTT] Failed to publish availability\n");
+  }
 
   Serial.printf("[MQTT] Auto-discovery published for %s\n", deviceId);
 }
@@ -240,51 +388,97 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
 
   // Publish temperature
   if (doc.containsKey("t") && dev->has_temp) {
-    String topic =
-        "homeassistant/sensor/" + uniquePrefix + "/temperature/state";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/temperature/state");
     String value = String(doc["t"].as<float>(), 1);
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish temperature\n");
+    }
   }
 
   // Publish humidity
   if (doc.containsKey("hu") && dev->has_hum) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/humidity/state";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/humidity/state");
     String value = String(doc["hu"].as<float>(), 0);
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish humidity\n");
+    }
   }
 
   // Publish battery
   if (doc.containsKey("b") && dev->has_batt) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/battery/state";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/battery/state");
     String value = String(doc["b"].as<int>());
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish battery\n");
+    }
   }
 
   // Publish light/lux
   if (doc.containsKey("lux") && dev->has_light) {
-    String topic = "homeassistant/sensor/" + uniquePrefix + "/lux/state";
+    String topic = buildTopic("sensor/" + uniquePrefix + "/lux/state");
     String value = String(doc["lux"].as<int>());
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish lux\n");
+    }
   }
 
   // Publish motion (binary sensor)
   if (doc.containsKey("m") && dev->has_motion) {
-    String topic =
-        "homeassistant/binary_sensor/" + uniquePrefix + "/motion/state";
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion/state");
     String value = doc["m"].as<bool>() ? "on" : "off";
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish motion\n");
+    }
   }
 
   // Publish contact (binary sensor)
   if (doc.containsKey("c") && dev->has_contact) {
-    String topic =
-        "homeassistant/binary_sensor/" + uniquePrefix + "/contact/state";
+    String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact/state");
     String value = doc["c"].as<bool>() ? "on" : "off";
-    mqttClient.publish(topic.c_str(), value.c_str(), MQTT_RETAIN);
+    if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to publish contact\n");
+    }
   }
 
   // Publish RSSI
-  String rssiTopic = "homeassistant/sensor/" + uniquePrefix + "/rssi/state";
+  String rssiTopic = buildTopic("sensor/" + uniquePrefix + "/rssi/state");
   String rssiValue = String(rssi);
-  mqttClient.publish(rssiTopic.c_str(), rssiValue.c_str(), MQTT_RETAIN);
+  if (!mqttClient.publish(rssiTopic.c_str(), rssiValue.c_str(), mqtt_retain)) {
+    Serial.printf("[MQTT] Failed to publish RSSI\n");
+  }
+}
+
+// Remove device from MQTT (publish empty configs to remove from Home Assistant)
+void removeDeviceFromMQTT(const char *deviceId) {
+  if (!mqtt_enabled || !mqttClient.connected()) {
+    return;
+  }
+
+  String gatewayMac = getGatewayMac();
+  String uniquePrefix = gatewayMac + "_" + String(deviceId);
+
+  Serial.printf("[MQTT] Removing device from MQTT: %s\n", deviceId);
+
+  // Publish empty payloads to remove entities from Home Assistant
+  String topics[] = {
+    buildTopic("sensor/" + uniquePrefix + "/temperature/config"),
+    buildTopic("sensor/" + uniquePrefix + "/humidity/config"),
+    buildTopic("sensor/" + uniquePrefix + "/battery/config"),
+    buildTopic("sensor/" + uniquePrefix + "/lux/config"),
+    buildTopic("binary_sensor/" + uniquePrefix + "/motion/config"),
+    buildTopic("binary_sensor/" + uniquePrefix + "/contact/config"),
+    buildTopic("sensor/" + uniquePrefix + "/rssi/config")
+  };
+
+  for (String topic : topics) {
+    if (!mqttClient.publish(topic.c_str(), "", mqtt_retain)) {
+      Serial.printf("[MQTT] Failed to remove config: %s\n", topic.c_str());
+    }
+  }
+
+  // Mark availability as offline
+  String availabilityTopic = buildTopic("sensor/" + uniquePrefix + "/availability");
+  mqttClient.publish(availabilityTopic.c_str(), "offline", mqtt_retain);
+
+  Serial.printf("[MQTT] Device removed from MQTT: %s\n", deviceId);
 }
