@@ -6,6 +6,13 @@
 #include "data/Settings.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <HomeSpan.h>
+
+// External variables for diagnostics
+extern unsigned long boot_time;
+extern uint32_t packets_received;
+extern bool homekit_started;
+extern int getActiveDeviceCount();
 
 // Global objects
 WiFiClient mqttWifiClient;
@@ -124,6 +131,9 @@ void connectMQTT() {
     // String commandTopic = buildTopic("bridge/" + getGatewayMac() + "/set");
     // mqttClient.subscribe(commandTopic.c_str(), mqtt_qos);
 
+    // Publish Home Assistant auto-discovery for gateway
+    publishGatewayDiscovery();
+
     // Publish bridge diagnostics
     publishBridgeDiagnostics();
   } else {
@@ -224,20 +234,143 @@ void publishBridgeDiagnostics() {
   String gatewayMac = getGatewayMac();
   String diagnosticTopic = buildTopic("bridge/" + gatewayMac + "/diagnostics");
 
-  // Build JSON payload with diagnostics
+  // Check if HomeKit is paired
+  bool isPaired = homekit_started && (homeSpan.controllerListBegin() != homeSpan.controllerListEnd());
+
+  // Build JSON payload with comprehensive diagnostics
   String payload = "{";
-  payload += "\"uptime\":" + String(millis() / 1000) + ",";
+
+  // WiFi information
+  payload += "\"wifi\":{";
   payload += "\"rssi\":" + String(WiFi.RSSI()) + ",";
+  payload += "\"ssid\":\"" + String(wifi_ssid) + "\",";
   payload += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
-  payload += "\"mac\":\"" + WiFi.macAddress() + "\",";
-  payload += "\"free_heap\":" + String(ESP.getFreeHeap());
+  payload += "\"mac\":\"" + WiFi.macAddress() + "\"";
+  payload += "},";
+
+  // LoRa radio information
+  payload += "\"lora\":{";
+  payload += "\"frequency\":" + String(lora_frequency, 2) + ",";
+  payload += "\"spreading_factor\":" + String(lora_sf) + ",";
+  payload += "\"bandwidth\":" + String(lora_bw);
+  payload += "},";
+
+  // Statistics
+  payload += "\"stats\":{";
+  payload += "\"packets_received\":" + String(packets_received) + ",";
+  payload += "\"active_devices\":" + String(getActiveDeviceCount()) + ",";
+  payload += "\"uptime\":" + String((millis() - boot_time) / 1000);
+  payload += "},";
+
+  // HomeKit status
+  payload += "\"homekit\":{";
+  payload += "\"paired\":" + String(isPaired ? "true" : "false");
+  payload += "},";
+
+  // MQTT status
+  payload += "\"mqtt\":{";
+  payload += "\"connected\":true,";
+  payload += "\"broker\":\"" + String(mqtt_server) + "\"";
+  payload += "},";
+
+  // System information
+  payload += "\"system\":{";
+  payload += "\"free_heap\":" + String(ESP.getFreeHeap()) + ",";
+  payload += "\"heap_size\":" + String(ESP.getHeapSize());
+  payload += "}";
+
   payload += "}";
 
   bool success = mqttClient.publish(diagnosticTopic.c_str(), payload.c_str(), mqtt_retain);
 
-  if (!success) {
+  if (success) {
+    Serial.println("[MQTT] Published bridge diagnostics");
+  } else {
     Serial.println("[MQTT] Failed to publish diagnostics");
   }
+}
+
+// Publish Home Assistant auto-discovery for gateway sensors
+void publishGatewayDiscovery() {
+  if (!mqtt_enabled || !mqttClient.connected()) {
+    return;
+  }
+
+  String gatewayMac = getGatewayMac();
+  String uniqueId = "lora_bridge_" + gatewayMac;
+
+  Serial.println("[MQTT] Publishing gateway auto-discovery");
+
+  // Device info JSON - shared across all gateway sensors
+  String deviceInfo =
+      String("\"device\":{\"identifiers\":[\"lora_gateway_") + gatewayMac + "\"],\"name\":\"LoRa Gateway " +
+      gatewayMac.substring(gatewayMac.length() - 4) +
+      "\",\"manufacturer\":\"ESP32\",\"model\":\"TTGO-LoRa32\",\"sw_version\":\"2.0\"}";
+
+  // WiFi RSSI sensor
+  String rssiTopic = buildTopic("sensor/" + uniqueId + "/wifi_rssi/config");
+  String rssiPayload = "{\"name\":\"WiFi Signal\",\"unique_id\":\"" + uniqueId +
+                       "_wifi_rssi\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                       "\",\"unit_of_measurement\":\"dBm\",\"device_class\":\"signal_strength\"," +
+                       "\"state_class\":\"measurement\",\"value_template\":\"{{ value_json.wifi.rssi }}\"," +
+                       "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(rssiTopic.c_str(), rssiPayload.c_str(), mqtt_retain);
+
+  // Packets received sensor
+  String packetsTopic = buildTopic("sensor/" + uniqueId + "/packets/config");
+  String packetsPayload = "{\"name\":\"Packets Received\",\"unique_id\":\"" + uniqueId +
+                          "_packets\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                          "\",\"state_class\":\"total_increasing\",\"icon\":\"mdi:package-variant\"," +
+                          "\"value_template\":\"{{ value_json.stats.packets_received }}\"," +
+                          "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(packetsTopic.c_str(), packetsPayload.c_str(), mqtt_retain);
+
+  // Active devices sensor
+  String devicesTopic = buildTopic("sensor/" + uniqueId + "/active_devices/config");
+  String devicesPayload = "{\"name\":\"Active Devices\",\"unique_id\":\"" + uniqueId +
+                          "_devices\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                          "\",\"state_class\":\"measurement\",\"icon\":\"mdi:devices\"," +
+                          "\"value_template\":\"{{ value_json.stats.active_devices }}\"," +
+                          deviceInfo + "}";
+  mqttClient.publish(devicesTopic.c_str(), devicesPayload.c_str(), mqtt_retain);
+
+  // Uptime sensor
+  String uptimeTopic = buildTopic("sensor/" + uniqueId + "/uptime/config");
+  String uptimePayload = "{\"name\":\"Uptime\",\"unique_id\":\"" + uniqueId +
+                         "_uptime\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                         "\",\"unit_of_measurement\":\"s\",\"device_class\":\"duration\"," +
+                         "\"state_class\":\"total_increasing\",\"value_template\":\"{{ value_json.stats.uptime }}\"," +
+                         "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(uptimeTopic.c_str(), uptimePayload.c_str(), mqtt_retain);
+
+  // Free heap sensor
+  String heapTopic = buildTopic("sensor/" + uniqueId + "/free_heap/config");
+  String heapPayload = "{\"name\":\"Free Memory\",\"unique_id\":\"" + uniqueId +
+                       "_heap\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                       "\",\"unit_of_measurement\":\"B\",\"device_class\":\"data_size\"," +
+                       "\"state_class\":\"measurement\",\"value_template\":\"{{ value_json.system.free_heap }}\"," +
+                       "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(heapTopic.c_str(), heapPayload.c_str(), mqtt_retain);
+
+  // HomeKit paired binary sensor
+  String pairedTopic = buildTopic("binary_sensor/" + uniqueId + "/homekit_paired/config");
+  String pairedPayload = "{\"name\":\"HomeKit Paired\",\"unique_id\":\"" + uniqueId +
+                         "_paired\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                         "\",\"payload_on\":\"true\",\"payload_off\":\"false\"," +
+                         "\"value_template\":\"{{ value_json.homekit.paired }}\"," +
+                         "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(pairedTopic.c_str(), pairedPayload.c_str(), mqtt_retain);
+
+  // LoRa frequency sensor
+  String freqTopic = buildTopic("sensor/" + uniqueId + "/lora_frequency/config");
+  String freqPayload = "{\"name\":\"LoRa Frequency\",\"unique_id\":\"" + uniqueId +
+                       "_frequency\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                       "\",\"unit_of_measurement\":\"MHz\",\"icon\":\"mdi:radio-tower\"," +
+                       "\"value_template\":\"{{ value_json.lora.frequency }}\"," +
+                       "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(freqTopic.c_str(), freqPayload.c_str(), mqtt_retain);
+
+  Serial.println("[MQTT] Gateway auto-discovery published");
 }
 
 // Publish Home Assistant auto-discovery configuration for a device
