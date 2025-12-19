@@ -34,6 +34,7 @@ void publishHomeAssistantDiscovery(Device *dev, const char *deviceId);
 void removeDeviceFromMQTT(const char *deviceId);
 void publishBridgeStatus(bool online);
 void publishBridgeDiagnostics();
+void publishBridgeDiagnosticsIfChanged();  // Rate-limited version
 void publishGatewayDiscovery();
 
 #endif

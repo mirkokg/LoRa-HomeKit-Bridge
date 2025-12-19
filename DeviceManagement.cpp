@@ -186,6 +186,8 @@ Device* registerDevice(const char* id, JsonDocument& doc) {
     // Publish Home Assistant auto-discovery if MQTT enabled
     if (mqtt_enabled) {
         publishHomeAssistantDiscovery(dev, id);
+        // Update gateway diagnostics (active_devices count changed)
+        publishBridgeDiagnosticsIfChanged();
     }
 
     return dev;
@@ -210,6 +212,8 @@ bool removeDevice(const char* id) {
             // Remove from MQTT (Home Assistant)
             if (mqtt_enabled) {
                 removeDeviceFromMQTT(id);
+                // Update gateway diagnostics (active_devices count changed)
+                publishBridgeDiagnosticsIfChanged();
             }
 
             // Clear device pointers

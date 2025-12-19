@@ -20,6 +20,10 @@ WiFiClientSecure mqttSecureClient;
 PubSubClient mqttClient;
 unsigned long lastMqttReconnect = 0;
 
+// Rate limiting for diagnostics publishing
+unsigned long lastDiagnosticsPublish = 0;
+#define DIAGNOSTICS_MIN_INTERVAL 30000  // Minimum 30 seconds between publishes
+
 #define MQTT_RECONNECT_INTERVAL 5000
 #define MQTT_BUFFER_SIZE 1024
 
@@ -146,7 +150,10 @@ void connectMQTT() {
       }
     }
 
-    // Publish bridge diagnostics
+    // Delay initial diagnostics to allow HomeSpan to load pairing info from flash
+    delay(2000);
+
+    // Publish initial bridge diagnostics
     publishBridgeDiagnostics();
   } else {
     Serial.printf(" Failed, rc=%d\n", mqttClient.state());
@@ -297,8 +304,21 @@ void publishBridgeDiagnostics() {
 
   if (success) {
     Serial.println("[MQTT] Published bridge diagnostics");
+    lastDiagnosticsPublish = millis();  // Update timestamp
   } else {
     Serial.println("[MQTT] Failed to publish diagnostics");
+  }
+}
+
+// Publish diagnostics only if minimum interval has passed (rate-limited)
+void publishBridgeDiagnosticsIfChanged() {
+  if (!mqtt_enabled || !mqttClient.connected()) {
+    return;
+  }
+
+  unsigned long now = millis();
+  if (now - lastDiagnosticsPublish >= DIAGNOSTICS_MIN_INTERVAL) {
+    publishBridgeDiagnostics();
   }
 }
 
@@ -363,6 +383,15 @@ void publishGatewayDiscovery() {
                        "\"state_class\":\"measurement\",\"value_template\":\"{{ value_json.system.free_heap }}\"," +
                        "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
   mqttClient.publish(heapTopic.c_str(), heapPayload.c_str(), mqtt_retain);
+
+  // IP address sensor
+  String ipTopic = buildTopic("sensor/" + uniqueId + "/ip_address/config");
+  String ipPayload = "{\"name\":\"IP Address\",\"unique_id\":\"" + uniqueId +
+                     "_ip\",\"state_topic\":\"" + buildTopic("bridge/" + gatewayMac + "/diagnostics") +
+                     "\",\"icon\":\"mdi:ip-network\"," +
+                     "\"value_template\":\"{{ value_json.wifi.ip }}\"," +
+                     "\"entity_category\":\"diagnostic\"," + deviceInfo + "}";
+  mqttClient.publish(ipTopic.c_str(), ipPayload.c_str(), mqtt_retain);
 
   // HomeKit paired binary sensor
   String pairedTopic = buildTopic("binary_sensor/" + uniqueId + "/homekit_paired/config");
