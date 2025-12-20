@@ -599,7 +599,15 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
   // Publish motion (binary sensor)
   if (doc.containsKey("m") && dev->has_motion) {
     String topic = buildTopic("binary_sensor/" + uniquePrefix + "/motion");
-    String value = doc["m"].as<bool>() ? "on" : "off";
+    // Handle both string ("on"/"off") and boolean (true/false) values
+    String value = "off";
+    if (doc["m"].is<bool>()) {
+      value = doc["m"].as<bool>() ? "on" : "off";
+    } else {
+      String mVal = doc["m"].as<String>();
+      mVal.toLowerCase();
+      value = (mVal == "on" || mVal == "1" || mVal == "true") ? "on" : "off";
+    }
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish motion\n");
     }
@@ -608,7 +616,15 @@ void publishDeviceData(Device *dev, JsonDocument &doc, int rssi) {
   // Publish contact (binary sensor)
   if (doc.containsKey("c") && dev->has_contact) {
     String topic = buildTopic("binary_sensor/" + uniquePrefix + "/contact");
-    String value = doc["c"].as<bool>() ? "on" : "off";
+    // Handle both string ("on"/"off") and boolean (true/false) values
+    String value = "off";
+    if (doc["c"].is<bool>()) {
+      value = doc["c"].as<bool>() ? "on" : "off";
+    } else {
+      String cVal = doc["c"].as<String>();
+      cVal.toLowerCase();
+      value = (cVal == "on" || cVal == "1" || cVal == "true") ? "on" : "off";
+    }
     if (!mqttClient.publish(topic.c_str(), value.c_str(), mqtt_retain)) {
       Serial.printf("[MQTT] Failed to publish contact\n");
     }
