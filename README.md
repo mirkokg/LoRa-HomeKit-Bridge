@@ -28,8 +28,8 @@ Device will act as a HomeKit bridge and all of the detected PricelessToolkit LoR
 
 - Support for OTA updates
 - Support for other boards
-- Automatic builds
-- Suggestions are welcome!
+
+- **Any other suggestions and ideas are more than welcome!**
 
 ### Supported Sensor Types
 
